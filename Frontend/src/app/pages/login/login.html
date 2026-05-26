@@ -1,0 +1,128 @@
+<div class="login-wrapper" role="main" aria-labelledby="login-title">
+  <div class="brand" aria-hidden="false">
+    <!-- Logo: absolute asset path + PNG fallback -->
+    <picture>
+      <source srcset="/assets/images/logo.svg" type="image/svg+xml" />
+      <img
+        src="/assets/images/logo.png"
+        alt="Vistara logo"
+        class="brand-logo"
+        loading="eager"
+        onerror="this.onerror=null;this.src='/assets/images/logo.png';"
+      />
+    </picture>
+
+    <!-- Inline SVG fallback (visible if assets fail or while debugging) -->
+    <!-- Remove or keep for debugging; it will display alongside if CSS hides the <img> -->
+    <div class="brand-inline-svg" aria-hidden="true" style="display:none;">
+      <svg class="brand-logo" width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+        <rect rx="12" width="72" height="72" fill="#02b101"/>
+        <g transform="translate(12,12)" fill="#fff">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M34 6 L28 30 L40 30 Z" fill="#fff"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="brand-text">
+      <h1 class="brand-title">Vistara Admin</h1>
+      <p class="brand-sub">Park Visitor Safety & Tracking</p>
+    </div>
+  </div>
+
+  <div class="login-card" aria-live="polite">
+    <h2 id="login-title" class="card-title">Admin Login</h2>
+
+    <form (ngSubmit)="onLogin()" [formGroup]="loginForm" class="login-form" novalidate>
+      <!-- Email -->
+      <div class="field">
+        <label class="label-text" for="email">Email</label>
+        <input
+          id="email"
+          class="input"
+          type="email"
+          formControlName="email"
+          placeholder="you@vistara.com"
+          autocomplete="username"
+          aria-required="true"
+        />
+        <div class="field-error" *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.invalid">
+          <small *ngIf="loginForm.get('email')?.errors?.['required']">Email is required.</small>
+          <small *ngIf="loginForm.get('email')?.errors?.['email']">Enter a valid email.</small>
+        </div>
+      </div>
+
+      <!-- Password with show/hide toggle -->
+      <div class="field">
+        <label class="label-text" for="password">Password</label>
+
+        <div class="password-wrap" style="display:flex;align-items:center;gap:8px;">
+          <input
+            id="password"
+            class="input"
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            aria-required="true"
+          />
+
+          <button
+            type="button"
+            class="icon-btn"
+            (click)="togglePassword()"
+            [attr.aria-pressed]="showPassword"
+            aria-label="Toggle password visibility"
+            title="Show or hide password"
+          >
+            <span *ngIf="!showPassword">Show</span>
+            <span *ngIf="showPassword">Hide</span>
+          </button>
+        </div>
+
+        <div class="field-error" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
+          <small>Password is required.</small>
+        </div>
+      </div>
+
+      <!-- Remember me + Forgot -->
+      <div class="meta-row" style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+        <label class="remember" style="display:flex;align-items:center;gap:8px;">
+          <input
+            type="checkbox"
+            (change)="onRemember($event)"
+            [checked]="remember"
+            aria-label="Remember my email"
+          />
+          <span>Remember me</span>
+        </label>
+
+        <div class="forgot">
+          <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions" style="margin-top:14px;">
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="loginForm.invalid || loading"
+          [attr.aria-busy]="loading"
+        >
+          <span *ngIf="!loading">Login</span>
+          <span *ngIf="loading">Signing in…</span>
+        </button>
+      </div>
+
+      <!-- Error -->
+      <div class="error" *ngIf="errorMessage" role="alert" aria-live="assertive" style="margin-top:12px;">
+        {{ errorMessage }}
+      </div>
+    </form>
+
+    <div class="login-footer" style="margin-top:16px;text-align:center;">
+      <small>Powered by Vistara</small>
+    </div>
+  </div>
+</div>
