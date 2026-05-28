@@ -1,0 +1,81 @@
+<!-- src/app/pages/dashboard/dashboard-home.html -->
+
+<!-- Metrics row -->
+<div class="metrics">
+  <div class="metric">
+    <div class="metric-value">{{ stats.activeVisitors }}</div>
+    <div class="metric-label">Active Visitors</div>
+  </div>
+  <div class="metric">
+    <div class="metric-value">{{ stats.checkedInToday }}</div>
+    <div class="metric-label">Check-ins Today</div>
+  </div>
+  <div class="metric">
+    <div class="metric-value danger">{{ stats.activeSOS }}</div>
+    <div class="metric-label">Active SOS Alerts</div>
+  </div>
+  <div class="metric">
+    <div class="metric-value">{{ stats.rescuesCompleted }}</div>
+    <div class="metric-label">Rescues Completed</div>
+  </div>
+</div>
+
+<!-- Map + Alerts column -->
+<div class="map-alerts">
+  <!-- Map panel -->
+  <div class="map-panel" aria-label="Live visitor tracking">
+    <div class="map-header">
+      <h3>Live Visitor Tracking</h3>
+      <small>Real-time GPS coordinates of {{ stats.activeVisitors }} active park visitors</small>
+    </div>
+    <div class="map-placeholder" id="map">
+      <div class="map-overlay">[Map placeholder — integrate Leaflet or Mapbox]</div>
+    </div>
+  </div>
+
+  <!-- Alerts panel -->
+  <aside class="alerts-panel" aria-label="Recent SOS Alerts">
+    <h3>Recent SOS Alerts</h3>
+    <ul class="alerts-list">
+      <li *ngFor="let a of sosAlerts" class="alert-item">
+        <div class="alert-left">
+          <div class="alert-name">{{ a.name }}</div>
+          <div class="alert-meta">Coords: {{ a.coords }} • {{ a.time | date:'shortTime' }}</div>
+        </div>
+        <div class="alert-right">
+          <div class="status" [ngClass]="a.status.toLowerCase()">{{ a.status }}</div>
+          <button class="btn-link" (click)="trackAlert(a.id)">
+            {{ a.status === 'PENDING' ? 'Track' : 'Details' }}
+          </button>
+        </div>
+      </li>
+    </ul>
+    <a class="view-all" routerLink="/dashboard/alerts">View All Active Alerts</a>
+  </aside>
+</div>
+
+<!-- Visitors table -->
+<div class="visitors-table">
+  <h3>Current Visitor Check-ins</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Visitor Name</th>
+        <th>Check-in Time</th>
+        <th>Vehicle Details</th>
+        <th>Status</th>
+        <th>Activity</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let v of visitors">
+        <td>{{ v.name }}</td>
+        <td>{{ v.checkin | date:'shortTime' }}</td>
+        <td>{{ v.vehicle }}</td>
+        <td>{{ v.status }}</td>
+        <td><button class="link" (click)="openVisitor(v.id)">View</button></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="table-note">Showing {{ visitors.length }} of {{ stats.checkedInToday }} records</div>
+</div>

@@ -1,1 +1,43 @@
-<p>tracking works!</p>
+<!-- src/app/pages/tracking/tracking.html -->
+
+<div class="tracking-page">
+  <!-- Search bar -->
+  <div class="tracking-search">
+    <input type="text" placeholder="Search visitor by name..." [(ngModel)]="searchQuery" />
+    <button (click)="searchVisitor()">Search</button>
+  </div>
+
+  <!-- Map section -->
+  <div class="map-section">
+    <div class="map-header">
+      <h2>Live Visitor Map</h2>
+      <small>Real-time GPS feed of all active visitors</small>
+    </div>
+    <div id="map" class="map-container">
+      <div class="map-placeholder">[Map loading — integrate Leaflet or Mapbox]</div>
+    </div>
+  </div>
+
+  <!-- Visitor list -->
+  <div class="visitor-list">
+    <h3>Currently Active Visitors</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Vehicle</th>
+          <th>Last Update</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let v of filteredVisitors">
+          <td>{{ v.name }}</td>
+          <td>{{ v.vehicle }}</td>
+          <td>{{ v.lastUpdate | date:'shortTime' }}</td>
+          <td>{{ v.status }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

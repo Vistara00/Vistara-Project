@@ -1,0 +1,79 @@
+/* src/app/pages/tracking/tracking.css */
+
+.tracking-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tracking-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.tracking-search input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.tracking-search button {
+  background-color: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.map-section {
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.map-header h2 {
+  margin: 0;
+}
+
+.map-container {
+  height: 480px;
+  border-radius: 8px;
+  border: 1px dashed #ccc;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+}
+
+.visitor-list {
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.visitor-list table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.visitor-list th,
+.visitor-list td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #f3f3f3;
+}
+
+.visitor-list th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
