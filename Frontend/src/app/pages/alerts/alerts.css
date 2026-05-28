@@ -1,0 +1,107 @@
+/* src/app/pages/alerts/alerts.css */
+
+.alerts-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.alerts-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.alerts-search input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.alerts-search button {
+  background-color: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.card-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.card-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.alerts-table {
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.alerts-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.alerts-table th,
+.alerts-table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #f3f3f3;
+}
+
+.alerts-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.status-active {
+  color: #0b6b0b;
+  font-weight: 600;
+}
+
+.status-pending {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.status-resolved {
+  color: #555;
+  font-weight: 600;
+}
+
+.btn-link {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  margin-right: 8px;
+}

@@ -1,1 +1,52 @@
-<p>checkins works!</p>
+<!-- src/app/pages/checkins/checkins.html -->
+
+<div class="checkins-page">
+  <!-- Search bar -->
+  <div class="checkins-search">
+    <input type="text" placeholder="Search visitor by name or vehicle..." [(ngModel)]="searchQuery" />
+    <button (click)="searchVisitor()">Search</button>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary-cards">
+    <div class="card">
+      <div class="card-value">{{ totalCheckins }}</div>
+      <div class="card-label">Total Check-ins</div>
+    </div>
+    <div class="card">
+      <div class="card-value">{{ totalCheckedOut }}</div>
+      <div class="card-label">Total Check-outs</div>
+    </div>
+    <div class="card">
+      <div class="card-value">{{ currentlyInside }}</div>
+      <div class="card-label">Currently Inside Park</div>
+    </div>
+  </div>
+
+  <!-- Visitor table -->
+  <div class="visitor-table">
+    <h3>Visitor Check-in / Check-out Records</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Vehicle</th>
+          <th>Check-in Time</th>
+          <th>Check-out Time</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let v of filteredVisitors">
+          <td>{{ v.name }}</td>
+          <td>{{ v.vehicle }}</td>
+          <td>{{ v.checkin | date:'shortTime' }}</td>
+          <td>{{ v.checkout ? (v.checkout | date:'shortTime') : '—' }}</td>
+          <td>
+            <span [ngClass]="v.status === 'Inside Park' ? 'status-inside' : 'status-out'">{{ v.status }}</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

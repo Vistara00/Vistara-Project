@@ -1,0 +1,93 @@
+/* src/app/pages/checkins/checkins.css */
+
+.checkins-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.checkins-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.checkins-search input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.checkins-search button {
+  background-color: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.card-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.card-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.visitor-table {
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.visitor-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.visitor-table th,
+.visitor-table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #f3f3f3;
+}
+
+.visitor-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.status-inside {
+  color: #0b6b0b;
+  font-weight: 600;
+}
+
+.status-out {
+  color: #d32f2f;
+  font-weight: 600;
+}

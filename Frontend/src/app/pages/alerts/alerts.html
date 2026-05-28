@@ -1,1 +1,59 @@
-<p>alerts works!</p>
+<!-- src/app/pages/alerts/alerts.html -->
+
+<div class="alerts-page">
+  <!-- Search bar -->
+  <div class="alerts-search">
+    <input type="text" placeholder="Search alerts by name or status..." [(ngModel)]="searchQuery" />
+    <button (click)="searchAlert()">Search</button>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary-cards">
+    <div class="card">
+      <div class="card-value">{{ activeCount }}</div>
+      <div class="card-label">Active Alerts</div>
+    </div>
+    <div class="card">
+      <div class="card-value">{{ pendingCount }}</div>
+      <div class="card-label">Pending Alerts</div>
+    </div>
+    <div class="card">
+      <div class="card-value">{{ resolvedCount }}</div>
+      <div class="card-label">Resolved Alerts</div>
+    </div>
+  </div>
+
+  <!-- Alerts table -->
+  <div class="alerts-table">
+    <h3>SOS Alerts Records</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Visitor Name</th>
+          <th>Coordinates</th>
+          <th>Time</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let a of filteredAlerts">
+          <td>{{ a.name }}</td>
+          <td>{{ a.coords }}</td>
+          <td>{{ a.time | date:'shortTime' }}</td>
+          <td>
+            <span [ngClass]="{
+              'status-active': a.status === 'ACTIVE',
+              'status-pending': a.status === 'PENDING',
+              'status-resolved': a.status === 'RESOLVED'
+            }">{{ a.status }}</span>
+          </td>
+          <td>
+            <button class="btn-link" (click)="viewAlert(a.id)">View</button>
+            <button class="btn-link" (click)="assignRanger(a.id)">Assign Ranger</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
