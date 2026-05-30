@@ -2,7 +2,7 @@ package com.vistara.tourist_tracking_system.service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+//import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import javax.crypto.SecretKey;
 
 @Service
 public class JwtService {
@@ -42,10 +43,10 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .setSigningKey(getSigningKey())
+                .verifyWith((SecretKey) getSigningKey())  // changed from setSigningKey
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)                 // changed from parseClaimsJws
+                .getPayload();                            // changed from getBody
     }
 
     private Boolean isTokenExpired(String token) {
@@ -60,11 +61,11 @@ public class JwtService {
 
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .claims(claims)                           // changed from setClaims
+                .subject(subject)                         // changed from setSubject
+                .issuedAt(new Date(System.currentTimeMillis()))       // changed from setIssuedAt
+                .expiration(new Date(System.currentTimeMillis() + expiration)) // changed from setExpiration
+                .signWith(getSigningKey())                // no longer needs algorithm arg
                 .compact();
     }
 

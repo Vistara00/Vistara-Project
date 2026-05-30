@@ -1,5 +1,3 @@
-/* src/app/pages/reports/reports.css */
-
 .reports-page {
   display: flex;
   flex-direction: column;
@@ -90,7 +88,7 @@
 }
 
 .export-buttons button {
-  background-color: var(--accent);
+  background-color: #4b81f4;
   color: #fff;
   border: none;
   padding: 8px 14px;
