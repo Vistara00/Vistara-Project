@@ -39,6 +39,11 @@ export const routes: Routes = [
           import('./pages/checkins/checkins').then(m => m.CheckinsComponent)
       },
       {
+         path: 'bookings',
+         loadComponent: () =>
+           import('./pages/bookings/bookings').then(m => m.BookingsComponent)
+      },
+      {
         path: 'alerts',
         loadComponent: () =>
           import('./pages/alerts/alerts').then(m => m.AlertsComponent)
