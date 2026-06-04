@@ -21,9 +21,21 @@ public class EmergencyAlert {
     @JoinColumn(name = "session_id", nullable = false)
     private VisitorSession session;
 
-    @Column(name = "alert_type", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     @Enumerated(EnumType.STRING)
+    @Column(name = "alert_type", nullable = false)
     private AlertType alertType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "alert_status", nullable = false)
+    private AlertStatus alertStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "priority")
+    private AlertPriority priority;
 
     @Column(name = "latitude", nullable = false)
     private Double latitude;
@@ -34,22 +46,48 @@ public class EmergencyAlert {
     @Column(name = "message", length = 500)
     private String message;
 
-    @Column(name = "timestamp", nullable = false)
-    private LocalDateTime timestamp;
-
-    @Column(name = "status", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private AlertStatus status = AlertStatus.PENDING;
-
     @ManyToOne
     @JoinColumn(name = "assigned_ranger_id")
     private User assignedRanger;
+
+    @Column(name = "responded_at")
+    private LocalDateTime respondedAt;
 
     @Column(name = "resolved_at")
     private LocalDateTime resolvedAt;
 
     @Column(name = "resolution_notes")
     private String resolutionNotes;
+
+    @Column(name = "response_time_seconds")
+    private Integer responseTimeSeconds;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (alertStatus == null) {
+            alertStatus = AlertStatus.PENDING;
+        }
+        if (priority == null) {
+            priority = AlertPriority.HIGH;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+        // Compute response_time_seconds when respondedAt is first set
+        if (respondedAt != null && responseTimeSeconds == null) {
+            responseTimeSeconds = (int) java.time.Duration.between(createdAt, respondedAt).getSeconds();
+        }
+    }
 
     public enum AlertType {
         MEDICAL,
@@ -65,5 +103,12 @@ public class EmergencyAlert {
         RESPONDING,
         RESOLVED,
         FALSE_ALARM
+    }
+
+    public enum AlertPriority {
+        LOW,
+        MEDIUM,
+        HIGH,
+        CRITICAL
     }
 }
