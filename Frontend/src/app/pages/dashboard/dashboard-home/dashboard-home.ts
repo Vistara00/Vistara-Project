@@ -1,6 +1,7 @@
 // src/app/pages/dashboard/dashboard-home.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import * as L from 'leaflet';
 
 @Component({
   selector: 'app-dashboard-home',
@@ -9,7 +10,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule]
 })
-export class DashboardHomeComponent implements OnInit {
+export class DashboardHomeComponent implements OnInit, AfterViewInit {
   stats = {
     activeVisitors: 124,
     checkedInToday: 87,
@@ -29,14 +30,22 @@ export class DashboardHomeComponent implements OnInit {
     { id: 'v4', name: 'Linda Chen', checkin: new Date('2026-05-25T09:30:00'), vehicle: 'Subaru Outback (C-4402)', status: 'Inside Park' }
   ];
 
-  constructor() {}
-
   ngOnInit(): void {
     // Replace with real API calls later
   }
 
+  ngAfterViewInit(): void {
+    const map = L.map('map').setView([-1.3733, 36.8588], 13); // Nairobi National Park center
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    L.marker([-1.3733, 36.8588]).addTo(map)
+      .bindPopup('Main Gate - Nairobi National Park')
+      .openPopup();
+  }
+
   trackAlert(id: string): void {
-    // For now just log, later you can navigate or open modal
     console.log('Track alert:', id);
   }
 
