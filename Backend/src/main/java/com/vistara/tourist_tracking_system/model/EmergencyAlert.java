@@ -25,6 +25,7 @@ public class EmergencyAlert {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    // Columns are now VARCHAR(50) after V9 migration — plain @Enumerated works
     @Enumerated(EnumType.STRING)
     @Column(name = "alert_type", nullable = false)
     private AlertType alertType;
@@ -72,20 +73,16 @@ public class EmergencyAlert {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (alertStatus == null) {
-            alertStatus = AlertStatus.PENDING;
-        }
-        if (priority == null) {
-            priority = AlertPriority.HIGH;
-        }
+        if (alertStatus == null) alertStatus = AlertStatus.PENDING;
+        if (priority == null)    priority    = AlertPriority.HIGH;
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-        // Compute response_time_seconds when respondedAt is first set
         if (respondedAt != null && responseTimeSeconds == null) {
-            responseTimeSeconds = (int) java.time.Duration.between(createdAt, respondedAt).getSeconds();
+            responseTimeSeconds = (int) java.time.Duration
+                    .between(createdAt, respondedAt).getSeconds();
         }
     }
 

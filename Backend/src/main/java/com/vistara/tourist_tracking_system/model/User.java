@@ -38,17 +38,22 @@ public class User implements UserDetails {
     @Column(name = "national_id", unique = true)
     private String nationalId;
 
+    // FIX: added columnDefinition = "user_role" — role is a PostgreSQL custom
+    // ENUM type in the DB. Without this Hibernate sends VARCHAR and PostgreSQL
+    // rejects the comparison with "operator does not exist: user_role = character varying"
     @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, columnDefinition = "user_role")
     private Role role;
 
+    // FIX: renamed from isActive to active — Lombok @Data generates isActive()
+    // for a boolean field named "isActive", which Hibernate strips the "is"
+    // prefix from and maps to a column called "active" instead of "is_active".
+    // Using field name "active" with @Column(name = "is_active") fixes this.
     @Column(name = "is_active")
-    private boolean isActive = true;
+    private boolean active = true;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "last_login")
-    private LocalDateTime lastLogin;
+    @Column(name = "is_verified")
+    private boolean verified = false;
 
     @Column(name = "emergency_contact_name")
     private String emergencyContactName;
@@ -56,9 +61,32 @@ public class User implements UserDetails {
     @Column(name = "emergency_contact_phone")
     private String emergencyContactPhone;
 
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    // FIX: deleted_at exists in the DB schema (V1) — mapped here so Hibernate
+    // schema validation doesn't fail on an unmapped column
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (role == null) {
+            role = Role.TOURIST;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     // UserDetails methods
@@ -87,8 +115,11 @@ public class User implements UserDetails {
         return true;
     }
 
+    // FIX: was return isActive — field renamed to active, so this must
+    // return active to match. Lombok also generates isActive() from the
+    // field name active, so UserDetails.isEnabled() works correctly.
     @Override
     public boolean isEnabled() {
-        return isActive;
+        return active;
     }
 }

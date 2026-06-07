@@ -29,7 +29,7 @@ WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@vistara.com');
 INSERT INTO users (email, password, full_name, phone_number, role, is_verified, created_at)
 SELECT
     'ranger@vistara.com',
-    'PASSWORD_HASH_PLACEHOLDER',   -- ← replace with real bcrypt hash at deploy time
+    'e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7',   -- ← replace with real bcrypt hash at deploy time
     'Head Park Ranger',
     '+254711111111',
     'PARK_RANGER',
