@@ -1,35 +1,64 @@
 <!-- src/app/pages/alerts/alerts.html -->
-
-<div class="alerts-page">
-  <!-- Search bar -->
-  <div class="alerts-search">
-    <input type="text" placeholder="Search alerts by name or status..." [(ngModel)]="searchQuery" />
-    <button (click)="searchAlert()">Search</button>
+<div class="alerts-dashboard">
+  <!-- Header -->
+  <div class="header">
+    <h2>SOS Alerts</h2>
+    <p>Monitor and respond to emergency alerts in real time.</p>
   </div>
 
   <!-- Summary cards -->
   <div class="summary-cards">
-    <div class="card">
-      <div class="card-value">{{ activeCount }}</div>
-      <div class="card-label">Active Alerts</div>
+    <div class="summary-card active">
+      <div class="icon-circle red">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div class="card-content">
+        <p class="label">ACTIVE ALERTS</p>
+        <h3>{{ activeAlerts }}</h3>
+      </div>
     </div>
-    <div class="card">
-      <div class="card-value">{{ pendingCount }}</div>
-      <div class="card-label">Pending Alerts</div>
+
+    <div class="summary-card pending">
+      <div class="icon-circle orange">
+        <i class="fas fa-hourglass-half"></i>
+      </div>
+      <div class="card-content">
+        <p class="label">PENDING ALERTS</p>
+        <h3>{{ pendingAlerts }}</h3>
+      </div>
     </div>
-    <div class="card">
-      <div class="card-value">{{ resolvedCount }}</div>
-      <div class="card-label">Resolved Alerts</div>
+
+    <div class="summary-card resolved">
+      <div class="icon-circle green">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="card-content">
+        <p class="label">RESOLVED ALERTS</p>
+        <h3>{{ resolvedAlerts }}</h3>
+      </div>
     </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <input type="text" placeholder="Search by name or contact..." [(ngModel)]="searchQuery" />
+    <select [(ngModel)]="statusFilter">
+      <option>All Status</option>
+      <option>Active</option>
+      <option>Pending</option>
+      <option>Resolved</option>
+    </select>
+    <button class="filter-btn"><i class="fas fa-filter"></i></button>
   </div>
 
   <!-- Alerts table -->
   <div class="alerts-table">
-    <h3>SOS Alerts Records</h3>
     <table>
       <thead>
         <tr>
           <th>Visitor Name</th>
+          <th>Location</th>
+          <th>Contact</th>
           <th>Coordinates</th>
           <th>Time</th>
           <th>Status</th>
@@ -39,21 +68,29 @@
       <tbody>
         <tr *ngFor="let a of filteredAlerts">
           <td>{{ a.name }}</td>
-          <td>{{ a.coords }}</td>
-          <td>{{ a.time | date:'shortTime' }}</td>
+          <td>{{ a.location }}</td>
+          <td>{{ a.contact }}</td>
+          <td>{{ a.coordinates }}</td>
+          <td>{{ a.time }}</td>
           <td>
-            <span [ngClass]="{
-              'status-active': a.status === 'ACTIVE',
-              'status-pending': a.status === 'PENDING',
-              'status-resolved': a.status === 'RESOLVED'
-            }">{{ a.status }}</span>
+            <span class="status" [ngClass]="a.status.toLowerCase()">{{ a.status }}</span>
           </td>
-          <td>
-            <button class="btn-link" (click)="viewAlert(a.id)">View</button>
-            <button class="btn-link" (click)="assignRanger(a.id)">Assign Ranger</button>
+          <td class="actions">
+            <button class="icon-btn" title="View details"><i class="fas fa-eye"></i></button>
+            <button class="icon-btn" title="Resolve"><i class="fas fa-check"></i></button>
+            <button class="icon-btn" title="Escalate"><i class="fas fa-exclamation"></i></button>
           </td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Map / Side panel -->
+  <div class="map-section">
+    <h4>Alert Locations</h4>
+    <div class="map-placeholder">
+      <!-- Replace with actual map integration later -->
+      <p>Map showing alert coordinates will appear here.</p>
+    </div>
   </div>
 </div>
