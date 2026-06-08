@@ -34,7 +34,6 @@ public class AuthController {
             User user = userService.registerUser(request, Role.TOURIST);
             Map<String, Object> response = new HashMap<>();
             response.put("user", user);
-            response.put("message", "Tourist registered successfully");
             return ResponseEntity.ok(ApiResponse.success(response, "Registration successful"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
@@ -64,9 +63,6 @@ public class AuthController {
         }
     }
 
-    // Step 1: user submits their email — returns a reset token
-    // In production the token is emailed; here it's returned in the response
-    // so you can test it directly in Postman without an email server.
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<?>> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request) {
@@ -74,29 +70,27 @@ public class AuthController {
             String token = passwordResetService.generateResetToken(request.getEmail());
 
             Map<String, Object> response = new HashMap<>();
-            // REMOVE the token from the response once you wire up real email sending —
-            // returning it in the API body is only safe for local development/testing.
+            // Remove resetToken from response in production —
+            // it will be delivered by email instead
             response.put("resetToken", token);
             response.put("expiresInMinutes", 15);
 
-            return ResponseEntity.ok(
-                    ApiResponse.success(response, "Password reset token generated. Check your email."));
+            return ResponseEntity.ok(ApiResponse.success(response,
+                    "Password reset token generated. Check your email."));
         } catch (Exception e) {
-            // Always return 200 even on failure — prevents email enumeration attacks
-            // where an attacker probes which emails are registered.
-            return ResponseEntity.ok(
-                    ApiResponse.success(null, "If that email exists, a reset link has been sent."));
+            // Return 200 regardless — prevents email enumeration attacks
+            return ResponseEntity.ok(ApiResponse.success(null,
+                    "If that email exists, a reset link has been sent."));
         }
     }
 
-    // Step 2: user submits the token + new password
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<?>> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request) {
         try {
             passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
-            return ResponseEntity.ok(
-                    ApiResponse.success(null, "Password reset successfully. Please log in."));
+            return ResponseEntity.ok(ApiResponse.success(null,
+                    "Password reset successfully. Please log in."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }

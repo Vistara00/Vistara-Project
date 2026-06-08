@@ -9,9 +9,7 @@ import java.util.List;
 @Repository
 public interface VisitorSessionRepository extends JpaRepository<VisitorSession, Long> {
 
-    // FIX: was findByIsActiveTrue() — field renamed to "active" in entity
     List<VisitorSession> findByActiveTrue();
 
-    // FIX: replaces the non-existent findStaleSessions() — used for today's check-ins
     List<VisitorSession> findByCheckInTimeAfter(LocalDateTime since);
 }
