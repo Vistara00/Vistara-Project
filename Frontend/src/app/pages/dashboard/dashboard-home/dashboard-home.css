@@ -165,7 +165,6 @@
 }
 
 
-
 /* Main grid */
 .main-grid {
   display: grid;
@@ -174,6 +173,12 @@
 }
 
 /* Chart card */
+.chart-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 30px 30px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
 .chart-card h4 {
   font-size: 1rem;
   font-weight: 700;
@@ -241,47 +246,113 @@
 }
 
 /* Right column cards */
-.weather-card,
-.activity-card,
-.actions-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+/* Weather Card */
+.weather-card {
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  padding: 18px 20px;
+}
+
+.weather-card h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
   margin-bottom: 20px;
+}
+
+.weather-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.weather-info i{
+  padding-top: 100px;
+}
+
+/* Recent Activity Card */
+.activity-card {
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  padding: 18px 20px;
+  margin-top: 20px;
+}
+
+
+/* Quick Actions Card */
+.actions-card {
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  padding: 18px 20px;
+  margin-top: 10px;
+}
+
+.actions-card h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 10px;
 }
 
 .weather-info h3 {
   font-size: 2rem;
+  font-weight: 700;
+  color: #2e7d32;
   margin: 0;
-  color: #0288d1;
 }
 
 .weather-info p {
-  margin: 6px 0;
-  color: #555;
+  font-size: 0.85rem;
+  color: #374151;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.weather-info i {
+  color: #2e7d32;
+  font-size: 0.9rem;
+  padding-top: 10px;
+}
+
+.activity-card h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 10px;
 }
 
 .activity-card ul {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .activity-card li {
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: 0.9rem;
+  color: #374151;
   padding: 6px 0;
-  font-size: 0.95rem;
-  color: #333;
+  border-bottom: 1px solid #f3f4f6;
+}
+.activity-card li:last-child {
+  border-bottom: none;
 }
 
 .activity-card li i {
-  color: #2e7d32;
+  color: #2e7d32; /* green accent for icons */
+  font-size: 0.95rem;
 }
 
-/* Quick actions */
+/* Actions row */
 .actions {
   display: flex;
   gap: 12px;
@@ -291,20 +362,29 @@
   flex: 1;
   border: none;
   border-radius: 8px;
-  padding: 12px;
+  padding: 12px 14px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.9rem;
 }
 
 .actions button i {
   margin-right: 6px;
 }
 
+/* Button colors */
 .actions button.red { background: #ffebee; color: #d32f2f; }
 .actions button.green { background: #e8f5e9; color: #2e7d32; }
 .actions button.gray { background: #f5f5f5; color: #555; }
 
+
+/* Hover effect */
 .actions button:hover {
-  transform: scale(1.05);
+  transform: scale(1.02);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.12);
 }
