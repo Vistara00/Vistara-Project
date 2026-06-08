@@ -12,38 +12,55 @@ import { FormsModule } from '@angular/forms';
 })
 export class AlertsComponent {
   searchQuery = '';
+  statusFilter = 'All Status';
+
   alerts = [
-    { id: 'sos-1', name: 'John Doe', coords: '34.05, -118.24', time: new Date(), status: 'PENDING' },
-    { id: 'sos-2', name: 'Jane Smith', coords: '34.01, -118.49', time: new Date(Date.now() - 2 * 60 * 60 * 1000), status: 'RESOLVED' },
-    { id: 'sos-3', name: 'Samuel Lee', coords: '34.07, -118.30', time: new Date(Date.now() - 30 * 60 * 1000), status: 'ACTIVE' }
+    {
+      name: 'Elena Brooks',
+      location: 'North Trail – Sector 4',
+      contact: '+1 555‑0101',
+      coordinates: '85.85° AM',
+      time: '04:48 AM',
+      status: 'Active'
+    },
+    {
+      name: 'James Miller',
+      location: 'East Gorge – Sector 9',
+      contact: '+1 555‑0102',
+      coordinates: '34.8891° N, 118.2612° W',
+      time: '10:41 AM',
+      status: 'Pending'
+    },
+    {
+      name: 'Sarah Lane',
+      location: 'Central Lake – Sector 2',
+      contact: '+1 555‑0103',
+      coordinates: '34.1012° N, 118.1945° W',
+      time: '10:12 AM',
+      status: 'Resolved'
+    }
   ];
 
-  filteredAlerts = [...this.alerts];
-
-  get activeCount(): number {
-    return this.alerts.filter(a => a.status === 'ACTIVE').length;
+  get activeAlerts(): number {
+    return this.alerts.filter(a => a.status === 'Active').length;
   }
 
-  get pendingCount(): number {
-    return this.alerts.filter(a => a.status === 'PENDING').length;
+  get pendingAlerts(): number {
+    return this.alerts.filter(a => a.status === 'Pending').length;
   }
 
-  get resolvedCount(): number {
-    return this.alerts.filter(a => a.status === 'RESOLVED').length;
+  get resolvedAlerts(): number {
+    return this.alerts.filter(a => a.status === 'Resolved').length;
   }
 
-  searchAlert(): void {
-    const query = this.searchQuery.toLowerCase();
-    this.filteredAlerts = this.alerts.filter(a =>
-      a.name.toLowerCase().includes(query) || a.status.toLowerCase().includes(query)
-    );
-  }
-
-  viewAlert(id: string): void {
-    console.log('View alert details:', id);
-  }
-
-  assignRanger(id: string): void {
-    console.log('Assign ranger to alert:', id);
+  get filteredAlerts() {
+    return this.alerts.filter(a => {
+      const matchesSearch =
+        a.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        a.contact.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const matchesStatus =
+        this.statusFilter === 'All Status' || a.status === this.statusFilter;
+      return matchesSearch && matchesStatus;
+    });
   }
 }

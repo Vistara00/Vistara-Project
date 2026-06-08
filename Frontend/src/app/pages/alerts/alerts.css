@@ -1,67 +1,119 @@
 /* src/app/pages/alerts/alerts.css */
 
-.alerts-page {
+.alerts-dashboard {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  padding: 20px;
+  background: #f9fafb;
+  min-height: 100vh;
 }
 
-.alerts-search {
+/* Header */
+.header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1b1b1b;
+  margin: 0;
+}
+
+.header p {
+  color: #666;
+  margin-top: 4px;
+}
+
+/* Summary cards */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.summary-card {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  padding: 18px 20px;
+}
+
+.icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.icon-circle.red {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.icon-circle.orange {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+
+.icon-circle.green {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.card-content .label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #444;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.card-content h3 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0b0b0b;
+  margin: 4px 0 0;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 12px;
   align-items: center;
 }
 
-.alerts-search input {
-  flex: 1;
+.filters input,
+.filters select {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 8px;
+  background: #fff;
 }
 
-.alerts-search button {
-  background-color: var(--accent);
+.filter-btn {
+  background-color: #2e7d32;
   color: #fff;
   border: none;
   padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
+  transition: background 0.2s ease;
 }
 
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
+.filter-btn:hover {
+  background-color: #1b5e20;
 }
 
-.card {
-  background: #fff;
-  border: 1px solid #e6e6e6;
-  border-radius: 10px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  text-align: center;
-}
-
-.card-value {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.card-label {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
+/* Alerts table */
 .alerts-table {
   background: #fff;
-  border: 1px solid #e6e6e6;
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  overflow-x: auto;
 }
 
 .alerts-table table {
@@ -72,36 +124,96 @@
 .alerts-table th,
 .alerts-table td {
   text-align: left;
-  padding: 10px 8px;
+  padding: 14px 12px;
   border-bottom: 1px solid #f3f3f3;
 }
 
 .alerts-table th {
-  color: var(--text-muted);
+  color: #555;
   font-weight: 600;
   font-size: 0.9rem;
 }
 
-.status-active {
-  color: #0b6b0b;
-  font-weight: 600;
+.alerts-table tbody tr {
+  transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
-.status-pending {
-  color: #b45309;
-  font-weight: 600;
-}
-
-.status-resolved {
-  color: #555;
-  font-weight: 600;
-}
-
-.btn-link {
-  background: none;
-  border: 0;
-  color: var(--accent);
+.alerts-table tbody tr:hover {
+  background-color: #f5f9f6;
+  transform: scale(1.01);
   cursor: pointer;
-  text-decoration: underline;
-  margin-right: 8px;
+}
+
+/* Status badges */
+.status {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.status.active {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.status.pending {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+
+.status.resolved {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #2e7d32;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.icon-btn:hover {
+  color: #006400;
+  transform: scale(1.1);
+}
+
+.icon-btn:disabled {
+  color: #aaa;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Map section */
+.map-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.map-section h4 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.map-placeholder {
+  background: #f1f1f1;
+  border-radius: 8px;
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  font-size: 0.95rem;
 }

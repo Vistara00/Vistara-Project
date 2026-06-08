@@ -126,7 +126,7 @@
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--primary-dark);
+  background: #08B603;
   transform: translateY(-1px);
 }
 
@@ -176,3 +176,40 @@
 .btn-primary { transition: transform .08s ease, box-shadow .12s ease; }
 .btn-primary:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(2,177,1,0.12); }
 .btn-primary:active { transform: translateY(0); box-shadow: none; }
+
+.preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.spinner-logo {
+  width: 80px;
+  height: 80px;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.forgot{
+  margin-top: 10px;
+  text-align: center;
+  color: #2e7d32;
+}
+
+.preloader p {
+  margin-top: 12px;
+  font-weight: 600;
+  color: #2e7d32;
+}

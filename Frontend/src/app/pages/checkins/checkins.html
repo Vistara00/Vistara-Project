@@ -1,52 +1,112 @@
 <!-- src/app/pages/checkins/checkins.html -->
-
-<div class="checkins-page">
-  <!-- Search bar -->
-  <div class="checkins-search">
-    <input type="text" placeholder="Search visitor by name or vehicle..." [(ngModel)]="searchQuery" />
-    <button (click)="searchVisitor()">Search</button>
+<div class="checkins-dashboard">
+  <!-- Header -->
+  <div class="header">
+    <h2>Check‑ins & Outs</h2>
+    <p>Monitor real‑time visitor movement and park occupancy.</p>
   </div>
 
-  <!-- Summary cards -->
-  <div class="summary-cards">
-    <div class="card">
-      <div class="card-value">{{ totalCheckins }}</div>
-      <div class="card-label">Total Check-ins</div>
+ <!-- Summary cards -->
+<div class="summary-cards">
+  <div class="summary-card visitors">
+    <div class="icon-circle green">
+      <i class="fas fa-users"></i>
     </div>
-    <div class="card">
-      <div class="card-value">{{ totalCheckedOut }}</div>
-      <div class="card-label">Total Check-outs</div>
+    <div class="card-content">
+      <p class="label">TOTAL VISITORS IN</p>
+      <h3>{{ totalVisitors }}</h3>
     </div>
-    <div class="card">
-      <div class="card-value">{{ currentlyInside }}</div>
-      <div class="card-label">Currently Inside Park</div>
+  </div>
+
+  <div class="summary-card scheduled">
+    <div class="icon-circle gray">
+      <i class="fas fa-calendar-alt"></i>
     </div>
+    <div class="card-content">
+      <p class="label">SCHEDULED TODAY</p>
+      <h3>{{ scheduledToday }}</h3>
+    </div>
+  </div>
+
+  <div class="summary-card checkouts">
+    <div class="icon-circle red">
+      <i class="fas fa-arrow-right"></i>
+    </div>
+    <div class="card-content">
+      <p class="label">EXPECTED CHECK‑OUTS</p>
+      <h3>{{ expectedCheckouts }}</h3>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Filters -->
+  <div class="filters">
+    <input type="text" placeholder="Search by name or ID..." [(ngModel)]="searchQuery" />
+    <select [(ngModel)]="zoneFilter">
+      <option>All Zones</option>
+      <option *ngFor="let z of zones">{{ z.name.split(' ')[0] }}</option>
+    </select>
+    <select [(ngModel)]="statusFilter">
+      <option>All Status</option>
+      <option>Checked In</option>
+      <option>Scheduled</option>
+      <option>Overstayed</option>
+    </select>
+    <button class="filter-btn"><i class="fas fa-filter"></i></button>
   </div>
 
   <!-- Visitor table -->
   <div class="visitor-table">
-    <h3>Visitor Check-in / Check-out Records</h3>
     <table>
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Vehicle</th>
-          <th>Check-in Time</th>
-          <th>Check-out Time</th>
+          <th>Booking ID</th>
+          <th>Visitor Name</th>
+          <th>Zone</th>
+          <th>Entry Time</th>
+          <th>Expected Exit</th>
           <th>Status</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let v of filteredVisitors">
+          <td>#{{ v.id }}</td>
           <td>{{ v.name }}</td>
-          <td>{{ v.vehicle }}</td>
-          <td>{{ v.checkin | date:'shortTime' }}</td>
-          <td>{{ v.checkout ? (v.checkout | date:'shortTime') : '—' }}</td>
+          <td>{{ v.zone }}</td>
+          <td>{{ v.entry }}</td>
+          <td>{{ v.exit }}</td>
           <td>
-            <span [ngClass]="v.status === 'Inside Park' ? 'status-inside' : 'status-out'">{{ v.status }}</span>
+            <span class="status" [ngClass]="v.status.toLowerCase().replace(' ', '-')">{{ v.status }}</span>
+          </td>
+          <td class="actions">
+            <button class="icon-btn" title="View details"><i class="fas fa-eye"></i></button>
+            <button class="icon-btn" title="Edit"><i class="fas fa-edit"></i></button>
+            <button class="icon-btn" title="Check‑out"><i class="fas fa-sign-out-alt"></i></button>
           </td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Occupancy section -->
+  <div class="occupancy-section">
+    <div class="zone-occupancy">
+      <h4>Live Zone Occupancy</h4>
+      <div class="zone" *ngFor="let z of zones">
+        <span>{{ z.name }}</span>
+        <div class="bar">
+          <div class="fill" [style.width.%]="(z.current / z.capacity) * 100"></div>
+        </div>
+        <small>{{ z.current }} / {{ z.capacity }}</small>
+      </div>
+    </div>
+
+    <div class="park-tip">
+      <h4>Park Tip</h4>
+      <p>North Ridge is reaching peak capacity. Consider redirecting new check‑ins to South Forest Sanctuary to maintain balance.</p>
+      <button class="heatmap-btn">View Sector Heatmap</button>
+    </div>
   </div>
 </div>

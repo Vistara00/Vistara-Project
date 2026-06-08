@@ -14,10 +14,19 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/dashboard/dashboard').then(m => m.DashboardComponent),
     children: [
+      // Default dashboard homepage
       {
-         path: '',
-  loadComponent: () =>
-    import('./pages/dashboard/dashboard-home/dashboard-home').then(m => m.DashboardHomeComponent)
+        path: '',
+        loadComponent: () =>
+          import('./pages/dashboard/dashboard-home/dashboard-home')
+            .then(m => m.DashboardHomeComponent)
+      },
+      // Explicit dashboardhome route (so /dashboard/dashboardhome works too)
+      {
+        path: 'dashboardhome',
+        loadComponent: () =>
+          import('./pages/dashboard/dashboard-home/dashboard-home')
+            .then(m => m.DashboardHomeComponent)
       },
       {
         path: 'tracking',
@@ -28,6 +37,11 @@ export const routes: Routes = [
         path: 'checkins',
         loadComponent: () =>
           import('./pages/checkins/checkins').then(m => m.CheckinsComponent)
+      },
+      {
+         path: 'bookings',
+         loadComponent: () =>
+           import('./pages/bookings/bookings').then(m => m.BookingsComponent)
       },
       {
         path: 'alerts',

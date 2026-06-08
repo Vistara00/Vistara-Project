@@ -114,6 +114,11 @@
           <span *ngIf="loading">Signing in…</span>
         </button>
       </div>
+  <!-- Logo Preloader -->
+  <div *ngIf="loading" class="preloader">
+    <img src="assets/images/logo.svg" alt="Vistara Logo" class="spinner-logo" />
+    <p>Authenticating...</p>
+  </div>
 
       <!-- Error -->
       <div class="error" *ngIf="errorMessage" role="alert" aria-live="assertive" style="margin-top:12px;">
@@ -126,3 +131,4 @@
     </div>
   </div>
 </div>
+
