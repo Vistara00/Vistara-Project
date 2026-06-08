@@ -1,81 +1,121 @@
 <!-- src/app/pages/dashboard/dashboard-home.html -->
+<div class="dashboard-home">
+  <!-- Header -->
+  <div class="header">
+    <h2>Executive Overview</h2>
+    <p>Live metrics and operational performance</p>
+  </div>
 
-<!-- Metrics row -->
-<div class="metrics">
-  <div class="metric">
-    <div class="metric-value">{{ stats.activeVisitors }}</div>
-    <div class="metric-label">Active Visitors</div>
-  </div>
-  <div class="metric">
-    <div class="metric-value">{{ stats.checkedInToday }}</div>
-    <div class="metric-label">Check-ins Today</div>
-  </div>
-  <div class="metric">
-    <div class="metric-value danger">{{ stats.activeSOS }}</div>
-    <div class="metric-label">Active SOS Alerts</div>
-  </div>
-  <div class="metric">
-    <div class="metric-value">{{ stats.rescuesCompleted }}</div>
-    <div class="metric-label">Rescues Completed</div>
-  </div>
-</div>
-
-<!-- Map + Alerts column -->
-<div class="map-alerts">
-  <!-- Map panel -->
-  <div class="map-panel" aria-label="Live visitor tracking">
-    <div class="map-header">
-      <h3>Live Visitor Tracking</h3>
-      <small>Real-time GPS coordinates of {{ stats.activeVisitors }} active park visitors</small>
+  <!-- Summary cards -->
+  <div class="summary-cards">
+    <div class="summary-card visitors">
+      <div class="icon-circle green">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="card-content">
+        <p class="label">Total Visitors Today</p>
+        <h3>{{ totalVisitorsToday }}</h3>
+        <span class="trend up">+12%</span>
+      </div>
     </div>
-    <div class="map-placeholder" id="map">
-      <div class="map-overlay">[Map placeholder — integrate Leaflet or Mapbox]</div>
+
+    <div class="summary-card alerts">
+      <div class="icon-circle red">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div class="card-content">
+        <p class="label">SOS Alerts</p>
+        <h3>{{ activeAlerts }}</h3>
+        <span class="priority">HIGH</span>
+      </div>
+    </div>
+
+    <div class="summary-card occupancy">
+      <div class="icon-circle blue">
+        <i class="fas fa-chart-pie"></i>
+      </div>
+      <div class="card-content">
+        <p class="label">Park Occupancy</p>
+        <h3>{{ parkOccupancy }}%</h3>
+        <span class="capacity">Capacity: 5k</span>
+      </div>
+    </div>
+
+    <div class="summary-card booking">
+      <div class="icon-circle gold">
+        <i class="fas fa-dollar-sign"></i>
+      </div>
+      <div class="card-content">
+        <p class="label">Daily Revenue</p>
+        <h3>${{ dailyBookingValue | number }}</h3>
+        <span class="trend up">+5.42%</span>
+      </div>
     </div>
   </div>
 
-  <!-- Alerts panel -->
-  <aside class="alerts-panel" aria-label="Recent SOS Alerts">
-    <h3>Recent SOS Alerts</h3>
-    <ul class="alerts-list">
-      <li *ngFor="let a of sosAlerts" class="alert-item">
-        <div class="alert-left">
-          <div class="alert-name">{{ a.name }}</div>
-          <div class="alert-meta">Coords: {{ a.coords }} • {{ a.time | date:'shortTime' }}</div>
+  <!-- Main content grid -->
+  <div class="main-grid">
+    <!-- Left column -->
+    <div class="left-column">
+      <!-- Visitor Flow Chart -->
+      <div class="chart-card">
+        <h4>Visitor Flow</h4>
+        <p>Peak visitor activity was at {{ peakTime }}</p>
+        <div class="bar-chart">
+          <div
+            class="bar"
+            *ngFor="let v of visitorFlow"
+            [style.height.%]="(v.count / 500) * 100"
+          >
+            <span>{{ v.time }}</span>
+          </div>
         </div>
-        <div class="alert-right">
-          <div class="status" [ngClass]="a.status.toLowerCase()">{{ a.status }}</div>
-          <button class="btn-link" (click)="trackAlert(a.id)">
-            {{ a.status === 'PENDING' ? 'Track' : 'Details' }}
+      </div>
+
+      <!-- Live Visitor Distribution Map -->
+      <div class="map-card">
+        <h4>Live Visitor Distribution</h4>
+        <div class="map-placeholder">
+          <p>Map showing visitor distribution will appear here.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div class="right-column">
+      <!-- Weather Widget -->
+      <div class="weather-card">
+        <h4>Live Weather</h4>
+        <div class="weather-info">
+          <h3>{{ weather.temperature }}°C</h3>
+          <p><i class="fas fa-wind"></i> Wind Speed: {{ weather.windSpeed }} km/h</p>
+          <p><i class="fas fa-cloud-rain"></i> Precipitation: {{ weather.precipitation }}%</p>
+          <p><i class="fas fa-sun"></i> {{ weather.condition }}</p>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="activity-card">
+        <h4>Recent Activity</h4>
+        <ul>
+          <li *ngFor="let item of recentActivity">
+            <i class="fas" [ngClass]="item.icon"></i> {{ item.text }}
+          </li>
+        </ul>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="actions-card">
+        <h4>Quick Actions</h4>
+        <div class="actions">
+          <button
+            *ngFor="let action of quickActions"
+            [ngClass]="action.color"
+          >
+            <i class="fas" [ngClass]="action.icon"></i> {{ action.label }}
           </button>
         </div>
-      </li>
-    </ul>
-    <a class="view-all" routerLink="/dashboard/alerts">View All Active Alerts</a>
-  </aside>
-</div>
-
-<!-- Visitors table -->
-<div class="visitors-table">
-  <h3>Current Visitor Check-ins</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Visitor Name</th>
-        <th>Check-in Time</th>
-        <th>Vehicle Details</th>
-        <th>Status</th>
-        <th>Activity</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let v of visitors">
-        <td>{{ v.name }}</td>
-        <td>{{ v.checkin | date:'shortTime' }}</td>
-        <td>{{ v.vehicle }}</td>
-        <td>{{ v.status }}</td>
-        <td><button class="link" (click)="openVisitor(v.id)">View</button></td>
-      </tr>
-    </tbody>
-  </table>
-  <div class="table-note">Showing {{ visitors.length }} of {{ stats.checkedInToday }} records</div>
+      </div>
+    </div>
+  </div>
 </div>
