@@ -58,13 +58,13 @@ export class LoginComponent implements OnInit {
     this.loading = true;
     const payload = this.loginForm.value;
 
-    // Real API call to your ngrok backend
-    this.http.post('https://undrafted-erasable-crevice.ngrok-free.dev/api/v1/auth/login', payload)
+    // API call to your ngrok backend
+    this.http.post('/api/v1/auth/login', payload)
       .subscribe({
         next: (res: any) => {
           this.loading = false;
           if (res && res.token) {
-            localStorage.setItem('token', res.token);
+            localStorage.setItem('token', res.data.token);
 
             if (this.remember) {
               localStorage.setItem('vistara_email', payload.email);
@@ -79,8 +79,8 @@ export class LoginComponent implements OnInit {
         },
         error: (err) => {
           this.loading = false;
-          console.error('LOGIN ERROR:', err);
-          this.errorMessage = err?.error?.message || 'Login failed. Check your credentials.';
+           console.error('LOGIN ERROR:', err);
+          this.errorMessage = err?.error?.message || 'Login ngfailed. Check your credentials.';
         }
       });
   }

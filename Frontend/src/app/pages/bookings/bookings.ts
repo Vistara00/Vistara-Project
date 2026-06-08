@@ -2,12 +2,23 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 
+// ✅ Angular Material imports
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatButtonModule } from '@angular/material/button';
+
 @Component({
   selector: 'app-bookings',
   templateUrl: './bookings.html',
   styleUrls: ['./bookings.css'],
   standalone: true,
-  imports: [CommonModule, HttpClientModule]
+  imports: [
+    CommonModule,
+    HttpClientModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatButtonModule
+  ]
 })
 export class BookingsComponent implements OnInit {
   bookings: any[] = [];

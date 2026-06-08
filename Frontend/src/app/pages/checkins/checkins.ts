@@ -12,31 +12,43 @@ import { FormsModule } from '@angular/forms';
 })
 export class CheckinsComponent {
   searchQuery = '';
+  zoneFilter = 'All Zones';
+  statusFilter = 'All Status';
+
   visitors = [
-    { name: 'Marcus Thorne', vehicle: 'Toyota Tacoma (B-7290)', checkin: new Date('2026-05-28T08:14:00'), checkout: null, status: 'Inside Park' },
-    { name: 'Elena Rodriguez', vehicle: 'Jeep Wrangler (R-9921)', checkin: new Date('2026-05-28T08:45:00'), checkout: null, status: 'Inside Park' },
-    { name: 'Samuel Lee', vehicle: 'No Vehicle (Hiking)', checkin: new Date('2026-05-28T09:12:00'), checkout: new Date('2026-05-28T11:00:00'), status: 'Checked Out' },
-    { name: 'Linda Chen', vehicle: 'Subaru Outback (C-4402)', checkin: new Date('2026-05-28T09:30:00'), checkout: null, status: 'Inside Park' }
+    { id: 'VT‑B821', name: 'Julianne Smith', zone: 'North Ridge', entry: '08:15 AM', exit: '04:30 PM', status: 'Checked In' },
+    { id: 'VT‑B834', name: 'Marcus Beard', zone: 'West Lake', entry: '11:30 AM', exit: '—', status: 'Scheduled' },
+    { id: 'VT‑B790', name: 'Knight', zone: 'South Forest', entry: '09:00 AM', exit: '—', status: 'Overstayed' },
+    { id: 'VT‑B840', name: 'David Lopez', zone: 'East Plains', entry: '02:30 PM', exit: '—', status: 'Checked In' },
+    { id: 'VT‑B845', name: 'Sarah Chen', zone: 'North Ridge', entry: '12:30 PM', exit: '—', status: 'Scheduled' }
   ];
 
-  filteredVisitors = [...this.visitors];
+  zones = [
+    { name: 'North Ridge Sector', current: 142, capacity: 200 },
+    { name: 'West Lake Recreational Area', current: 118, capacity: 150 },
+    { name: 'South Forest Sanctuary', current: 67, capacity: 300 }
+  ];
 
-  get totalCheckins(): number {
-    return this.visitors.length;
+  get totalVisitors(): number {
+    return 412;
   }
 
-  get totalCheckedOut(): number {
-    return this.visitors.filter(v => v.status === 'Checked Out').length;
+  get scheduledToday(): number {
+    return 185;
   }
 
-  get currentlyInside(): number {
-    return this.visitors.filter(v => v.status === 'Inside Park').length;
+  get expectedCheckouts(): number {
+    return 94;
   }
 
-  searchVisitor(): void {
-    const query = this.searchQuery.toLowerCase();
-    this.filteredVisitors = this.visitors.filter(v =>
-      v.name.toLowerCase().includes(query) || v.vehicle.toLowerCase().includes(query)
-    );
+  get filteredVisitors() {
+    return this.visitors.filter(v => {
+      const matchesSearch =
+        v.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        v.id.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const matchesZone = this.zoneFilter === 'All Zones' || v.zone === this.zoneFilter;
+      const matchesStatus = this.statusFilter === 'All Status' || v.status === this.statusFilter;
+      return matchesSearch && matchesZone && matchesStatus;
+    });
   }
 }
