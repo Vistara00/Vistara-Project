@@ -18,6 +18,8 @@ export class LoginComponent implements OnInit {
   showPassword = false;
   remember = false;
 
+  private readonly API_URL = 'http://localhost:8087/api/v1/auth/login';
+
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
@@ -50,21 +52,27 @@ export class LoginComponent implements OnInit {
 
   onLogin(): void {
     this.errorMessage = '';
+
     if (this.loginForm.invalid) {
       this.errorMessage = 'Please fill in all required fields correctly.';
       return;
     }
 
     this.loading = true;
+
     const payload = this.loginForm.value;
 
-    // API call to your ngrok backend
-    this.http.post('/api/v1/auth/login', payload)
+    this.http.post(this.API_URL, payload)
       .subscribe({
         next: (res: any) => {
+          console.log('LOGIN RESPONSE:', res);
+
           this.loading = false;
-          if (res && res.token) {
-            localStorage.setItem('token', res.data.token);
+
+          const token = res?.data?.token;
+
+          if (token) {
+            localStorage.setItem('token', token);
 
             if (this.remember) {
               localStorage.setItem('vistara_email', payload.email);
@@ -74,13 +82,18 @@ export class LoginComponent implements OnInit {
 
             this.router.navigate(['/dashboard']);
           } else {
-            this.errorMessage = 'Login succeeded but no token returned.';
+            this.errorMessage = 'Login successful but token missing in response.';
           }
         },
+
         error: (err) => {
           this.loading = false;
-           console.error('LOGIN ERROR:', err);
-          this.errorMessage = err?.error?.message || 'Login ngfailed. Check your credentials.';
+
+          console.error('LOGIN ERROR:', err);
+
+          this.errorMessage =
+            err?.error?.message ||
+            'Login failed. Please check your credentials or server connection.';
         }
       });
   }
