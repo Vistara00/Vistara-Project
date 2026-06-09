@@ -5,8 +5,12 @@
       <h2>Bookings Management</h2>
       <p>Manage and monitor visitor bookings across all park zones.</p>
     </div>
-    <button class="new-booking-btn">+ New Booking</button>
+    <!-- ✅ Updated button with modal trigger -->
+    <button class="new-booking-btn" (click)="openBookingModal()">+ New Booking</button>
   </div>
+
+  <!-- ✅ Modal trigger -->
+  <app-new-booking *ngIf="showModal" (close)="closeBookingModal()"></app-new-booking>
 
   <!-- Summary cards -->
   <div class="summary-cards">
@@ -52,15 +56,19 @@
       <tr>
         <th>Booking ID</th>
         <th>Visitor</th>
-        <th>Date & Time</th>
-        <th>Guests</th>
+        <th>Payment Method</th>
+        <th>Check‑in Date</th>
+        <th>Check‑out Date</th>
         <th>Status</th>
         <th>Actions</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let booking of bookings">
+        <!-- Booking ID -->
         <td>#BK-{{ booking.id }}</td>
+
+        <!-- Visitor info -->
         <td>
           <div class="visitor-info">
             <img src="assets/images/avatar.svg" alt="Avatar" class="avatar" />
@@ -70,24 +78,32 @@
             </div>
           </div>
         </td>
+
+        <!-- Payment Method -->
+        <td>{{ booking.payment_method }}</td>
+
+        <!-- Check‑in Date -->
+        <td>{{ booking.checkin_date | date:'MMM d, y' }}</td>
+
+        <!-- Check‑out Date -->
+        <td>{{ booking.checkout_date | date:'MMM d, y' }}</td>
+
+        <!-- Status -->
         <td>
-          {{ booking.date | date:'MMM d, y' }}<br />
-          <small>{{ booking.time }}</small>
+          <span class="status" [ngClass]="booking.status.toLowerCase()">
+            {{ booking.status }}
+          </span>
         </td>
-        <td>{{ booking.guests }}</td>
-        <td>
-          <span class="status" [ngClass]="booking.status.toLowerCase()">{{ booking.status }}</span>
-        </td>
+
+        <!-- Actions -->
         <td class="actions">
-          <!-- Font Awesome icons -->
-          <button class="icon-btn" title="View details">
-            <i class="fas fa-eye"></i>
+          <button class="icon-btn" title="Check‑in visitor"
+                  [disabled]="booking.status !== 'Scheduled'">
+            <i class="fas fa-sign-in-alt"></i> Check‑in
           </button>
-          <button class="icon-btn" title="Edit booking">
-            <i class="fas fa-edit"></i>
-          </button>
-          <button class="icon-btn" title="Check‑in visitor" [disabled]="booking.status === 'Cancelled'">
-            <i class="fas fa-check-circle"></i>
+          <button class="icon-btn" title="Check‑out visitor"
+                  [disabled]="booking.status !== 'Checkedin'">
+            <i class="fas fa-sign-out-alt"></i> Check‑out
           </button>
         </td>
       </tr>

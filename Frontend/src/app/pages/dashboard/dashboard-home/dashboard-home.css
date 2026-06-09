@@ -234,6 +234,12 @@
   margin-top: 20px;
 }
 
+.map-card h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 10px;
+}
 .map-placeholder {
   background: #f1f1f1;
   border-radius: 8px;

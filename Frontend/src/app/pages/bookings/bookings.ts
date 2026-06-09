@@ -2,10 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 
-// ✅ Angular Material imports
+//  Angular Material imports
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
+import { NewBooking } from '../new-booking/new-booking';
 
 @Component({
   selector: 'app-bookings',
@@ -17,13 +18,17 @@ import { MatButtonModule } from '@angular/material/button';
     HttpClientModule,
     MatIconModule,
     MatTooltipModule,
-    MatButtonModule
+    MatButtonModule,
+    NewBooking
   ]
 })
 export class BookingsComponent implements OnInit {
   bookings: any[] = [];
   loading = false;
   errorMessage = '';
+
+  // Modal state
+  showModal = false;
 
   constructor(private http: HttpClient) {}
 
@@ -37,7 +42,6 @@ export class BookingsComponent implements OnInit {
       .subscribe({
         next: (res: any) => {
           this.loading = false;
-          // Adjust based on your API response structure
           this.bookings = res.data || res;
         },
         error: (err) => {
@@ -46,5 +50,14 @@ export class BookingsComponent implements OnInit {
           this.errorMessage = err?.error?.message || 'Failed to load bookings.';
         }
       });
+  }
+
+  // Modal control methods
+  openBookingModal(): void {
+    this.showModal = true;
+  }
+
+  closeBookingModal(): void {
+    this.showModal = false;
   }
 }
