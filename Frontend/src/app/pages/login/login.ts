@@ -72,7 +72,7 @@ export class LoginComponent implements OnInit {
           const token = res?.data?.token;
 
           if (token) {
-            localStorage.setItem('token', token);
+            localStorage.setItem('authToken', token);
 
             if (this.remember) {
               localStorage.setItem('vistara_email', payload.email);

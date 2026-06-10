@@ -1,7 +1,9 @@
 <div class="modal-overlay">
   <div class="modal">
 <h3>Create New Booking</h3>
-<div class="loader" *ngIf="loading"></div>
+<div class="loader-overlay" *ngIf="loading">
+  <div class="loader"></div>
+</div>
 <form (ngSubmit)="confirmBooking(bookingForm)" #bookingForm="ngForm">
   <div class="form-grid">
     <div class="form-group">
