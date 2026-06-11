@@ -6,6 +6,8 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { TokenInterceptor } from './core/token-interceptor'; 
 
 import { routes } from './app.routes';
 
@@ -14,6 +16,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideAnimations(),
-    importProvidersFrom(ReactiveFormsModule, MatInputModule, MatButtonModule, MatCardModule)
+    importProvidersFrom(ReactiveFormsModule, MatInputModule, MatButtonModule, MatCardModule),
+    provideHttpClient(withInterceptors([TokenInterceptor])) 
   ]
 };

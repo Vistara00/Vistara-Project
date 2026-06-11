@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { AuthService } from '../../core/auth.service'; // ✅ import AuthService
 
 @Component({
   selector: 'app-login',
@@ -23,7 +24,8 @@ export class LoginComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private authService: AuthService 
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -59,42 +61,37 @@ export class LoginComponent implements OnInit {
     }
 
     this.loading = true;
-
     const payload = this.loginForm.value;
 
-    this.http.post(this.API_URL, payload)
-      .subscribe({
-        next: (res: any) => {
-          console.log('LOGIN RESPONSE:', res);
+    this.http.post(this.API_URL, payload).subscribe({
+      next: (res: any) => {
+        console.log('LOGIN RESPONSE:', res);
+        this.loading = false;
 
-          this.loading = false;
+        const token = res?.data?.token;
 
-          const token = res?.data?.token;
+        if (token) {
+          // save token with 1 hour expiry
+          this.authService.saveToken(token, 3600);
 
-          if (token) {
-            localStorage.setItem('authToken', token);
-
-            if (this.remember) {
-              localStorage.setItem('vistara_email', payload.email);
-            } else {
-              localStorage.removeItem('vistara_email');
-            }
-
-            this.router.navigate(['/dashboard']);
+          if (this.remember) {
+            localStorage.setItem('vistara_email', payload.email);
           } else {
-            this.errorMessage = 'Login successful but token missing in response.';
+            localStorage.removeItem('vistara_email');
           }
-        },
 
-        error: (err) => {
-          this.loading = false;
-
-          console.error('LOGIN ERROR:', err);
-
-          this.errorMessage =
-            err?.error?.message ||
-            'Login failed. Please check your credentials or server connection.';
+          this.router.navigate(['/dashboard']);
+        } else {
+          this.errorMessage = 'Login successful but token missing in response.';
         }
-      });
+      },
+      error: (err) => {
+        this.loading = false;
+        console.error('LOGIN ERROR:', err);
+        this.errorMessage =
+          err?.error?.message ||
+          'Login failed. Please check your credentials or server connection.';
+      }
+    });
   }
 }

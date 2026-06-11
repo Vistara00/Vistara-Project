@@ -23,7 +23,7 @@
 
     <ul class="nav-list secondary">
       <li class="nav-item" routerLink="/dashboard/settings" routerLinkActive="active"><i class="fas fa-cog"></i><span>Settings</span></li>
-      <li class="nav-item"><i class="fas fa-sign-out-alt"></i><span>Logout</span></li>
+      <li class="nav-item" (click)="onLogout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></li>
     </ul>
   </nav>
 
@@ -46,7 +46,7 @@
       </div>
     </header>
 
-    <!-- 👇 Child pages load here -->
+    <!-- Child pages load here -->
     <section class="dashboard-content">
       <router-outlet></router-outlet>
     </section>

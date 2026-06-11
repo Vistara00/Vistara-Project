@@ -1,8 +1,9 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login';
+import { AuthGuard } from './core/auth-guard';
 
 export const routes: Routes = [
-  // Login
+  // Login route
   { path: 'login', component: LoginComponent },
 
   // Default redirect
@@ -11,6 +12,7 @@ export const routes: Routes = [
   // Dashboard layout with nested child pages
   {
     path: 'dashboard',
+    canActivate: [AuthGuard], // ✅ protect dashboard and all its children
     loadComponent: () =>
       import('./pages/dashboard/dashboard').then(m => m.DashboardComponent),
     children: [
@@ -39,9 +41,9 @@ export const routes: Routes = [
           import('./pages/checkins/checkins').then(m => m.CheckinsComponent)
       },
       {
-         path: 'bookings',
-         loadComponent: () =>
-           import('./pages/bookings/bookings').then(m => m.BookingsComponent)
+        path: 'bookings',
+        loadComponent: () =>
+          import('./pages/bookings/bookings').then(m => m.BookingsComponent)
       },
       {
         path: 'alerts',
