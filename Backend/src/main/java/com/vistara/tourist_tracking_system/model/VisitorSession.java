@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import org.locationtech.jts.geom.Point;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -53,22 +52,10 @@ public class VisitorSession {
     @Column(name = "notes")
     private String notes;
 
-    // === Payment / Booking fields ===
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method")
-    private PaymentMethod paymentMethod;
-
-    @Column(name = "amount")
-    private BigDecimal amount;
-
-    @Column(name = "payment_reference")
-    private String paymentReference;
-
-    @Column(name = "is_paid")
-    private Boolean isPaid = false;
-
-    @Column(name = "booking_notes")
-    private String bookingNotes;
+    // === Reference to Booking (nullable, because walk‑in visits may not have a booking) ===
+    @ManyToOne
+    @JoinColumn(name = "booking_id")
+    private Booking booking;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -83,15 +70,10 @@ public class VisitorSession {
         if (checkInTime == null) {
             checkInTime = LocalDateTime.now();
         }
-        if (isPaid == null) isPaid = false;
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    public enum PaymentMethod {
-        MPESA, E_CITIZEN
     }
 }
