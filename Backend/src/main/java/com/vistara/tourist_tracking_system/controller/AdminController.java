@@ -2,6 +2,7 @@ package com.vistara.tourist_tracking_system.controller;
 
 import com.vistara.tourist_tracking_system.dto.*;
 import com.vistara.tourist_tracking_system.exception.DuplicateResourceException;
+import com.vistara.tourist_tracking_system.model.Booking;
 import com.vistara.tourist_tracking_system.model.EmergencyAlert;
 import com.vistara.tourist_tracking_system.model.User;
 import com.vistara.tourist_tracking_system.model.VisitorSession;
@@ -12,12 +13,12 @@ import com.vistara.tourist_tracking_system.service.BookingService;
 import com.vistara.tourist_tracking_system.service.EmergencyService;
 import com.vistara.tourist_tracking_system.service.UserService;
 import com.vistara.tourist_tracking_system.service.VisitorService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -95,10 +96,36 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(session, "Check‑out successful"));
     }
 
+    @PostMapping("/bookings/cash-booking")
+    public ResponseEntity<ApiResponse<BookingResponse>> createCashBooking(
+            @AuthenticationPrincipal UserDetails adminDetails,
+            @Valid @RequestBody CashBookingRequest request) {
+
+        User tourist = userService.createTourist(
+                request.getFullName(),
+                request.getEmail(),
+                request.getPhoneNumber()
+        );
+
+        Booking booking = bookingService.createConfirmedBooking(
+                tourist,
+                request.getCheckInDate(),
+                request.getCheckOutDate(),
+                request.getNumberOfPeople(),
+                request.getVehicleRegistration(),
+                request.getAmount(),
+                "CASH",
+                request.getNotes()
+        );
+
+        BookingResponse response = convertToResponse(booking);
+        return ResponseEntity.ok(ApiResponse.success(response, "Cash booking created successfully. Visitor can now be checked in."));
+    }
+
     @GetMapping("/bookings")
     public ResponseEntity<ApiResponse<List<BookingResponse>>> getAllBookings(
             @RequestParam(required = false) String status) {
-        List<com.vistara.tourist_tracking_system.model.Booking> bookings;
+        List<Booking> bookings;
         if (status != null && !status.isEmpty()) {
             bookings = bookingService.getBookingsByStatus(status);
         } else {
@@ -124,7 +151,7 @@ public class AdminController {
         return ResponseEntity.ok("{\"ResultCode\":0,\"ResultDesc\":\"Success\"}");
     }
 
-    private BookingResponse convertToResponse(com.vistara.tourist_tracking_system.model.Booking booking) {
+    private BookingResponse convertToResponse(Booking booking) {
         BookingResponse response = new BookingResponse();
         response.setId(booking.getId());
         response.setBookingReference(booking.getBookingReference());

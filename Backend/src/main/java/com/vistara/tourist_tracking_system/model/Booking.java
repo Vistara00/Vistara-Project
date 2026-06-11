@@ -61,6 +61,9 @@ public class Booking {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "payment_tracking_id")
+    private String paymentTrackingId;  // stores CheckoutRequestID
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

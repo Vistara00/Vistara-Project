@@ -26,6 +26,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findAllByOrderByCreatedAtDesc();
 
+    Optional<Booking> findByPaymentTrackingId(String paymentTrackingId);
+
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId AND b.bookingStatus = :status")
     List<Booking> findUserBookingsByStatus(@Param("userId") Long userId, @Param("status") String status);
 

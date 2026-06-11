@@ -11,6 +11,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;   // ADDED
+
+import java.util.UUID;                                           // ADDED
 
 @Service
 @RequiredArgsConstructor
@@ -50,5 +53,23 @@ public class UserService implements UserDetailsService {
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new DuplicateResourceException("User not found"));
+    }
+
+    @Transactional
+    public User createTourist(String fullName, String email, String phoneNumber) {
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("User with email " + email + " already exists");
+        }
+        User user = new User();
+        user.setFullName(fullName);
+        user.setEmail(email);
+        user.setPhoneNumber(phoneNumber);
+        user.setRole(Role.TOURIST);
+        user.setActive(true);
+        user.setVerified(true);
+        // Generate a random temporary password (user can reset later)
+        String tempPassword = UUID.randomUUID().toString();
+        user.setPassword(passwordEncoder.encode(tempPassword));
+        return userRepository.save(user);
     }
 }
