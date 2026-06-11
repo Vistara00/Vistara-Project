@@ -5,11 +5,11 @@
       <h2>Bookings Management</h2>
       <p>Manage and monitor visitor bookings across all park zones.</p>
     </div>
-    <!-- ✅ Updated button with modal trigger -->
+    <!--  Updated button with modal trigger -->
     <button class="new-booking-btn" (click)="openBookingModal()">+ New Booking</button>
   </div>
 
-  <!-- ✅ Modal trigger -->
+  <!-- Modal trigger -->
   <app-new-booking *ngIf="showModal" (close)="closeBookingModal()"></app-new-booking>
 
   <!-- Summary cards -->
@@ -59,7 +59,7 @@
         <th>Payment Method</th>
         <th>Check‑in Date</th>
         <th>Check‑out Date</th>
-        <th>Status</th>
+        <th>Payment Status</th>
         <th>Actions</th>
       </tr>
     </thead>

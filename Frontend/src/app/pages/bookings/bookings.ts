@@ -36,21 +36,36 @@ export class BookingsComponent implements OnInit {
     this.fetchBookings();
   }
 
+  // Fetch bookings from the backend
   fetchBookings(): void {
-    this.loading = true;
-    this.http.get('https://undrafted-erasable-crevice.ngrok-free.dev/api/v1/bookings')
-      .subscribe({
-        next: (res: any) => {
-          this.loading = false;
-          this.bookings = res.data || res;
-        },
-        error: (err) => {
-          this.loading = false;
-          console.error('BOOKINGS ERROR:', err);
-          this.errorMessage = err?.error?.message || 'Failed to load bookings.';
-        }
-      });
-  }
+  this.loading = true;
+
+  this.http.get('http://localhost:8087/api/v1/bookings')
+    .subscribe({
+      next: (res: any) => {
+        this.loading = false;
+
+        // Transform API data to match template fields
+        this.bookings = (res.data || []).map((b: any) => ({
+          id: b.id,
+          visitor_name: b.vehicleRegistration || 'Unknown Visitor',
+          email: '—', // placeholder until backend provides visitor email
+          payment_method: b.paymentMethod,
+          checkin_date: b.checkInDate,
+          checkout_date: b.checkOutDate,
+          status: b.paymentStatus, // or b.bookingStatus if you prefer
+          amount: b.amount
+        }));
+      },
+      error: (err) => {
+        this.loading = false;
+        console.error('BOOKINGS ERROR:', err);
+        this.errorMessage = err?.error?.message || 'Failed to load bookings.';
+      }
+    });
+}
+
+
 
   // Modal control methods
   openBookingModal(): void {
