@@ -27,7 +27,7 @@ export class NewBooking {
 
     if (bookingData.payment === 'Cash') {
       // Directly insert booking
-      this.http.post('/api/v1/bookings', bookingData).subscribe({
+      this.http.post('/api/v1/admin/bookings/cash-booking', bookingData).subscribe({
         next: () => this.showSuccess(),
         error: () => this.loading = false
       });
