@@ -19,7 +19,7 @@ export class LoginComponent implements OnInit {
   showPassword = false;
   remember = false;
 
-  private readonly API_URL = 'http://localhost:8087/api/v1/auth/login';
+  private readonly API_URL = 'https://undrafted-erasable-crevice.ngrok-free.dev/api/v1/auth/login';
 
   constructor(
     private fb: FormBuilder,
