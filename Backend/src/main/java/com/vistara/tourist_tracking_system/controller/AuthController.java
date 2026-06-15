@@ -95,14 +95,11 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<?>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         try {
-            String token = passwordResetService.generateResetToken(request.getEmail());
-            Map<String, Object> response = new HashMap<>();
-            response.put("resetToken", token);
-            response.put("expiresInMinutes", 15);
-            return ResponseEntity.ok(ApiResponse.success(response, "Token generated (dev mode)"));
+            passwordResetService.generateResetToken(request.getEmail());
+            return ResponseEntity.ok(ApiResponse.success(null, "If that email exists, a reset link has been sent."));
         } catch (Exception e) {
-            // Return the actual error for debugging
-            return ResponseEntity.status(500).body(ApiResponse.error(e.getMessage()));
+            log.error("Password reset request failed for {}: {}", request.getEmail(), e.getMessage());
+            return ResponseEntity.ok(ApiResponse.success(null, "If that email exists, a reset link has been sent."));
         }
     }
 
