@@ -53,12 +53,13 @@ public class MpesaService {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         String tokenUrl = baseUrl + "/oauth/v1/generate?grant_type=client_credentials";
-        ResponseEntity<Map> response = restTemplate.exchange(tokenUrl, HttpMethod.GET, entity, Map.class);
+        ResponseEntity<Map> response = restTemplate.exchange(
+                tokenUrl, HttpMethod.GET, entity, Map.class);
 
         if (response.getBody() != null && response.getBody().containsKey("access_token")) {
             return response.getBody().get("access_token").toString();
         }
-        throw new RuntimeException("Failed to obtain M-Pesa access token");
+        throw new RuntimeException("Failed to obtain M-Pesa access token. Response: " + response);
     }
 
     public MpesaStkResponse stkPush(MpesaStkRequest request) {

@@ -26,15 +26,22 @@ public class SecurityConfig {
     private final PasswordEncoder passwordEncoder;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints (no authentication required)
                         .requestMatchers("/auth/**", "/public/**", "/ws/**").permitAll()
+                        // M-Pesa callback endpoint (must be public for M-Pesa to call)
+                        .requestMatchers("/payments/mpesa/stk-callback").permitAll()
+                        // M-Pesa STK Push initiation (requires authentication – tourists or admins)
+                        .requestMatchers("/payments/mpesa/stkpush").authenticated()
+                        // Role‑based access for other endpoints
                         .requestMatchers("/tourist/**").hasRole("TOURIST")
                         .requestMatchers("/ranger/**").hasRole("PARK_RANGER")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // All other requests require authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -54,7 +61,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 }

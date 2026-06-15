@@ -22,7 +22,7 @@ public class PaymentController {
     private final MpesaService mpesaService;
     private final BookingService bookingService;
 
-    @PostMapping("/mpesa/{booking_reference}/stkpush")
+    @PostMapping("/mpesa/stkpush")
     public ResponseEntity<ApiResponse<MpesaStkResponse>> initiateStkPush(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody MpesaStkRequest request) {
