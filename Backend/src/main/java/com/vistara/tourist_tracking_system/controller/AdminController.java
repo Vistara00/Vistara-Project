@@ -20,6 +20,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +41,21 @@ public class AdminController {
     private final VisitorService visitorService;
     private final BookingService bookingService;
     private final UserService userService;
+    private final JavaMailSender mailSender;
+
+    @PutMapping("/visitor/{visitorId}")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> adminUpdateUser(
+            @PathVariable Long userId,
+            @Valid @RequestBody AdminUpdateUserRequest request) {
+        UserResponseDTO updated = userService.adminUpdateUser(userId, request);
+        return ResponseEntity.ok(ApiResponse.success(updated, "User updated by admin"));
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<ApiResponse<List<UserResponseDTO>>> getAllUsers() {
+        List<UserResponseDTO> users = userService.getAllUsers();
+        return ResponseEntity.ok(ApiResponse.success(users, "All users retrieved successfully"));
+    }
 
     @GetMapping("/active-visitors")
     public ResponseEntity<ApiResponse<?>> getActiveVisitors() {
@@ -149,6 +167,21 @@ public class AdminController {
     public ResponseEntity<String> mpesaCallback(@RequestBody String callbackJson) {
         System.out.println("M-Pesa callback received: " + callbackJson);
         return ResponseEntity.ok("{\"ResultCode\":0,\"ResultDesc\":\"Success\"}");
+    }
+
+    @GetMapping("/test-mail")
+    public ResponseEntity<String> testMail() {
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom("lawrencedenzel60@gmail.com");
+            msg.setTo("lawrencedenzel60@gmail.com");
+            msg.setSubject("Test");
+            msg.setText("Hello");
+            mailSender.send(msg);
+            return ResponseEntity.ok("Email sent successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Failed: " + e.getMessage());
+        }
     }
 
     private BookingResponse convertToResponse(Booking booking) {

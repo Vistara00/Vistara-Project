@@ -42,7 +42,7 @@ public class User implements UserDetails {
     // ENUM type in the DB. Without this Hibernate sends VARCHAR and PostgreSQL
     // rejects the comparison with "operator does not exist: user_role = character varying"
     @Enumerated(EnumType.STRING)
-//    @Column(name = "role", nullable = false, columnDefinition = "user_role")
+    @Column(name = "role", nullable = false, columnDefinition = "user_role")
     private Role role;
 
     // FIX: renamed from isActive to active — Lombok @Data generates isActive()

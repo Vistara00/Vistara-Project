@@ -18,11 +18,18 @@ public class ProfileController {
 
     private final UserService userService;
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<UserResponseDTO>> getProfile(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        UserResponseDTO userProfile = userService.getUserProfile(email);
+        return ResponseEntity.ok(ApiResponse.success(userProfile, "Profile retrieved successfully"));
+    }
+
     @PutMapping
     public ResponseEntity<ApiResponse<UserResponseDTO>> updateProfile(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody UpdateProfileRequest request) {
-
         String currentEmail = userDetails.getUsername();
         UserResponseDTO updatedUser = userService.updateProfile(currentEmail, request);
         return ResponseEntity.ok(ApiResponse.success(updatedUser, "Profile updated successfully"));

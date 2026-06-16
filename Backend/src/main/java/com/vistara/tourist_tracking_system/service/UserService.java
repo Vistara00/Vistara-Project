@@ -1,5 +1,6 @@
 package com.vistara.tourist_tracking_system.service;
 
+import com.vistara.tourist_tracking_system.dto.AdminUpdateUserRequest;
 import com.vistara.tourist_tracking_system.dto.RegisterRequest;
 import com.vistara.tourist_tracking_system.dto.UpdateProfileRequest;
 import com.vistara.tourist_tracking_system.dto.UserResponseDTO;
@@ -15,7 +16,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -105,6 +108,37 @@ public class UserService implements UserDetailsService {
         return convertToDTO(saved);
     }
 
+    @Transactional
+    public UserResponseDTO adminUpdateUser(Long userId, AdminUpdateUserRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (request.getFullName() != null) user.setFullName(request.getFullName());
+        if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new RuntimeException("Email already in use");
+            }
+            user.setEmail(request.getEmail());
+        }
+        if (request.getEmergencyContactName() != null) user.setEmergencyContactName(request.getEmergencyContactName());
+        if (request.getEmergencyContactPhone() != null) user.setEmergencyContactPhone(request.getEmergencyContactPhone());
+        if (request.getActive() != null) user.setActive(request.getActive());
+        if (request.getVerified() != null) user.setVerified(request.getVerified());
+
+        return convertToDTO(userRepository.save(user));
+    }
+
+    public List<UserResponseDTO> getAllUsers() {
+        List<User> users = userRepository.findAllByOrderByIdAsc();
+        return users.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+    public UserResponseDTO getUserProfile(String email) {
+        User user = findByEmail(email);
+        return convertToDTO(user);
+    }
     private UserResponseDTO convertToDTO(User user) {
         UserResponseDTO dto = new UserResponseDTO();
         dto.setId(user.getId());
