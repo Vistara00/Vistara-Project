@@ -19,29 +19,42 @@ export class NewBooking {
   constructor(private http: HttpClient) {}
 
   // Called when form is submitted
-  confirmBooking(form?: any): void {
-    if (!form?.value) return;
+confirmBooking(form?: any): void {
+  if (!form?.value) return;
 
-    const bookingData = form.value;
-    this.loading = true;
+  const bookingData = form.value;
+  this.loading = true;
 
-    if (bookingData.payment === 'Cash') {
-      // Directly insert booking
-      this.http.post('/api/v1/admin/bookings/cash-booking', bookingData).subscribe({
-        next: () => this.showSuccess(),
-        error: () => this.loading = false
-      });
-    } else if (bookingData.payment === 'Mpesa') {
-      // Call Mpesa API
-      this.http.post('/api/v1/mpesa/initiate', bookingData).subscribe({
-        next: () => this.showSuccess(),
-        error: () => this.loading = false
-      });
-    } else if (bookingData.payment === 'Ecitizen') {
-      alert('E‑Citizen service not available.');
-      this.loading = false;
-    }
+  if (bookingData.payment === 'Cash') {
+    // Add notes for cash bookings
+    const payload = {
+      ...bookingData,
+      notes: bookingData.notes || "Paid cash at gate"
+    };
+
+    this.http.post('/api/v1/admin/bookings/cash-booking', payload).subscribe({
+      next: () => this.showSuccess(),
+      error: () => this.loading = false
+    });
+
+  } else if (bookingData.payment === 'Mpesa') {
+    // Add notes for Mpesa bookings
+    const payload = {
+      ...bookingData,
+      notes: bookingData.notes || "Awaiting Mpesa payment"
+    };
+
+    this.http.post('/api/v1/mpesa/initiate', payload).subscribe({
+      next: () => this.showSuccess(),
+      error: () => this.loading = false
+    });
+
+  } else if (bookingData.payment === 'Ecitizen') {
+    alert('E‑Citizen service not available.');
+    this.loading = false;
   }
+}
+
 
   // Show success animation
   private showSuccess(): void {
@@ -49,7 +62,7 @@ export class NewBooking {
     this.success = true;
     setTimeout(() => {
       this.success = false;
-      this.close.emit(); // Close modal after success
+      this.close.emit(); 
     }, 2000);
   }
 

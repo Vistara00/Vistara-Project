@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service'; // ✅ import AuthService
 
@@ -10,7 +10,7 @@ import { AuthService } from '../../core/auth.service'; // ✅ import AuthService
   templateUrl: './login.html',
   styleUrls: ['./login.css'],
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, HttpClientModule]
+  imports: [CommonModule, ReactiveFormsModule ]
 })
 export class LoginComponent implements OnInit {
   loginForm: FormGroup;
@@ -19,7 +19,7 @@ export class LoginComponent implements OnInit {
   showPassword = false;
   remember = false;
 
-  private readonly API_URL = 'https://undrafted-erasable-crevice.ngrok-free.dev/api/v1/auth/login';
+  private readonly API_URL = '/api/v1/auth/login';
 
   constructor(
     private fb: FormBuilder,
@@ -65,7 +65,7 @@ export class LoginComponent implements OnInit {
 
     this.http.post(this.API_URL, payload).subscribe({
       next: (res: any) => {
-        console.log('LOGIN RESPONSE:', res);
+        // console.log('LOGIN RESPONSE:', res);
         this.loading = false;
 
         const token = res?.data?.token;

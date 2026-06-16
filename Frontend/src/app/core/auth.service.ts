@@ -10,7 +10,7 @@ export class AuthService {
     const token = this.getToken();
     if (!token) return false;
 
-    // ✅ check expiry
+    //  check expiry
     const expiry = localStorage.getItem('tokenExpiry');
     if (expiry && Date.now() > +expiry) {
       this.logout(); // clear expired token

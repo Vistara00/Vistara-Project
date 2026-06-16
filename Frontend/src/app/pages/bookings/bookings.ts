@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 
 //  Angular Material imports
 import { MatIconModule } from '@angular/material/icon';
@@ -15,7 +15,7 @@ import { NewBooking } from '../new-booking/new-booking';
   standalone: true,
   imports: [
     CommonModule,
-    HttpClientModule,
+    // HttpClientModule,
     MatIconModule,
     MatTooltipModule,
     MatButtonModule,
@@ -40,12 +40,12 @@ export class BookingsComponent implements OnInit {
   fetchBookings(): void {
   this.loading = true;
 
-  this.http.get('http://localhost:8087/api/v1/bookings')
+  this.http.get('/api/v1/admin/bookings')
     .subscribe({
       next: (res: any) => {
         this.loading = false;
+        console.log('BOOKINGS RESPONSE:', res);
 
-        // Transform API data to match template fields
         this.bookings = (res.data || []).map((b: any) => ({
           id: b.id,
           visitor_name: b.vehicleRegistration || 'Unknown Visitor',
@@ -64,8 +64,6 @@ export class BookingsComponent implements OnInit {
       }
     });
 }
-
-
 
   // Modal control methods
   openBookingModal(): void {
