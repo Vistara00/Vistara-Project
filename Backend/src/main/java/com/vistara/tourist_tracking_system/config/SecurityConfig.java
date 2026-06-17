@@ -32,12 +32,19 @@ public class SecurityConfig {
                 .cors(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints (no authentication required)
-                        .requestMatchers("/auth/**", "/public/**", "/ws/**").permitAll()
-                        // M-Pesa callback endpoint (must be public for M-Pesa to call)
+                        .requestMatchers(
+                                "/auth/**",
+                                "/public/**",
+                                "/ws/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
+                        // M-Pesa callback (must be public)
                         .requestMatchers("/payments/mpesa/stk-callback").permitAll()
-                        // M-Pesa STK Push initiation (requires authentication – tourists or admins)
+                        // M-Pesa STK Push initiation (authenticated)
                         .requestMatchers("/payments/mpesa/stkpush").authenticated()
-                        // Role‑based access for other endpoints
+                        // Role-based access
                         .requestMatchers("/tourist/**").hasRole("TOURIST")
                         .requestMatchers("/ranger/**").hasRole("PARK_RANGER")
                         .requestMatchers("/admin/**").hasRole("ADMIN")

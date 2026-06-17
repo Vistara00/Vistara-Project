@@ -5,13 +5,15 @@ import com.vistara.tourist_tracking_system.dto.MpesaStkRequest;
 import com.vistara.tourist_tracking_system.dto.MpesaStkResponse;
 import com.vistara.tourist_tracking_system.model.Booking;
 import com.vistara.tourist_tracking_system.model.User;
+import com.vistara.tourist_tracking_system.model.Role;
 import com.vistara.tourist_tracking_system.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;           // <-- ADD THIS IMPORT
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -66,12 +68,22 @@ public class BookingService {
         return saved;
     }
 
+//    private String generateBookingReference() {
+//        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+//        long count = bookingRepository.count() + 1;
+//        return String.format("VST-%s-%04d", datePart, count);
+//    }
+
+//    private String generateBookingReference() {
+//        return "VST-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+//    }
+
     private String generateBookingReference() {
         String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        long count = bookingRepository.count() + 1;
-        return String.format("VST-%s-%04d", datePart, count);
+        String timePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss"));
+        String randomPart = String.format("%04d", (int) (Math.random() * 10000));
+        return String.format("VST-%s-%s-%s", datePart, timePart, randomPart);
     }
-
     @Transactional
     public void confirmPayment(Long bookingId, String paymentReference, String paymentStatus) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -93,6 +105,27 @@ public class BookingService {
         }
         booking.setBookingStatus(Booking.BookingStatus.CANCELLED);
         bookingRepository.save(booking);
+    }
+
+    @Transactional
+    public void deleteBooking(Long bookingId, User currentUser) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // Check if booking is in pending state
+        if (!Booking.PaymentStatus.PENDING.equals(booking.getPaymentStatus()) ||
+                !Booking.BookingStatus.PENDING.equals(booking.getBookingStatus())) {
+            throw new RuntimeException("Cannot delete booking – only pending bookings can be deleted");
+        }
+
+        // Check authorization: admin can delete any; visitor only their own
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        boolean isOwner = booking.getUser().getId().equals(currentUser.getId());
+        if (!isAdmin && !isOwner) {
+            throw new RuntimeException("You are not authorized to delete this booking");
+        }
+
+        bookingRepository.delete(booking);
     }
 
     @Transactional
