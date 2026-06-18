@@ -26,8 +26,7 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.fetchProfile();
   }
-
-  // 🧩 Fetch profile and compute initials
+  //  Fetch profile and compute initials
   private fetchProfile(): void {
     this.http.get('/api/v1/profile').subscribe({
       next: (res: any) => {
@@ -42,12 +41,12 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // 🧩 Toggle dropdown menu
+  //  Toggle dropdown menu
   toggleMenu(): void {
     this.showMenu = !this.showMenu;
   }
 
-  // 🧩 Close menu when clicking outside
+  // Close menu when clicking outside
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
     const target = event.target as HTMLElement;
@@ -56,13 +55,13 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // 🧩 Navigation helper
+  //  Navigation helper
   navigateTo(route: string): void {
     this.router.navigate([`/dashboard/${route}`]);
     this.showMenu = false;
   }
 
-  // 🧩 Logout
+  //  Logout
   onLogout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);

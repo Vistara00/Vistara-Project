@@ -4,8 +4,6 @@ import { log } from 'console';
 export const TokenInterceptor: HttpInterceptorFn = (req, next) => {
   const token = localStorage.getItem('authToken');
 
-  // Always log when the interceptor runs
-  console.log('Interceptor fired. Current token:', token);
 
   if (token && token.trim().length > 0) {
     // Clone the request and attach the Authorization header
@@ -15,7 +13,6 @@ export const TokenInterceptor: HttpInterceptorFn = (req, next) => {
       }
     });
 
-    console.log('Authorization header attached:', cloned.headers.get('Authorization'));
     return next(cloned);
   }
 
