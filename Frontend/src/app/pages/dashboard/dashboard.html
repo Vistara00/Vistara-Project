@@ -35,15 +35,29 @@
         <input type="search" placeholder="Search visitors or alerts…" aria-label="Search visitors or alerts" />
       </div>
       <div class="topbar-right">
+        <div class="notification">
+          <i class="fa fa-bell"></i>
+        </div>
+
+         <div class="profile-icon" (click)="toggleMenu()">
+          {{ initials }}
+        </div>
+
+  <div class="dropdown" *ngIf="showMenu">
+    <ul>
+      <li (click)="navigateTo('profile')">Profile</li>
+      <li (click)="navigateTo('reset-password')">Reset Password</li>
+      <li (click)="onLogout()">Logout</li>
+    </ul>
+  </div>
+</div>
+
+      <!-- <div class="topbar-right">
         <div class="notifications" title="Notifications">🔔</div>
         <div class="profile">          
-          <div class="profile-info">
-            <div class="name">Officer Mitchell</div>
-            <div class="small">Ranger ID: 4920</div>
-          </div>
           <div class="avatar">RM</div>
         </div>
-      </div>
+      </div> -->
     </header>
 
     <!-- Child pages load here -->
