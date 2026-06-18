@@ -53,6 +53,15 @@ public class BookingController {
         return ResponseEntity.ok(ApiResponse.success(null, "Booking cancelled"));
     }
 
+    @DeleteMapping("/{bookingId}")
+    public ResponseEntity<ApiResponse<Void>> deleteBooking(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long bookingId) {
+        User currentUser = userService.findByEmail(userDetails.getUsername());
+        bookingService.deleteBooking(bookingId, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(null, "Booking deleted successfully"));
+    }
+
     private BookingResponse convertToResponse(Booking booking) {
         BookingResponse response = new BookingResponse();
         response.setId(booking.getId());
