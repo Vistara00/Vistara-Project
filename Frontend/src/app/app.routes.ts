@@ -12,7 +12,7 @@ export const routes: Routes = [
   // Dashboard layout with nested child pages
   {
     path: 'dashboard',
-    canActivate: [AuthGuard], // ✅ protect dashboard and all its children
+    canActivate: [AuthGuard], // protect dashboard and all its children
     loadComponent: () =>
       import('./pages/dashboard/dashboard').then(m => m.DashboardComponent),
     children: [

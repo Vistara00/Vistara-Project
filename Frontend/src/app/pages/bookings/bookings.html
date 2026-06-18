@@ -66,15 +66,13 @@
     <tbody>
       <tr *ngFor="let booking of bookings">
         <!-- Booking ID -->
-        <td>#BK-{{ booking.id }}</td>
+        <td>{{ booking.id }}</td>
 
         <!-- Visitor info -->
         <td>
           <div class="visitor-info">
-            <img src="assets/images/avatar.svg" alt="Avatar" class="avatar" />
             <div>
-              <strong>{{ booking.visitor_name }}</strong><br />
-              <small>{{ booking.email }}</small>
+              <strong>{{ booking.visitor_name }}</strong><br />              
             </div>
           </div>
         </td>

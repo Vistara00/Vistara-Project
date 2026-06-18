@@ -1,6 +1,6 @@
 {
   "/api": {
-    "target": "http://localhost:8087",
+    "target": "https://undrafted-erasable-crevice.ngrok-free.dev/",
     "secure": false,
     "changeOrigin": true
   }

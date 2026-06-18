@@ -80,6 +80,10 @@
   cursor: pointer;
 }
 
+.table td{
+  font-size: 100px;
+}
+
 .bookings-table {
   width: 100%;
   border-collapse: collapse;
@@ -153,7 +157,8 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 18px;       /* icon size */
+  align-content: center;
+  font-size: 10px;       /* icon size */
   color: #2e7d32;        /* green accent */
   transition: color 0.2s ease, transform 0.2s ease;
 }
