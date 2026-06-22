@@ -19,6 +19,22 @@ export class BookingsComponent implements OnInit {
   errorMessage = '';
   showModal = false;
 
+  currentPage = 0;
+  pageSize = 20;
+  totalItems = 0;
+
+  get totalPages(): number {
+    return Math.ceil(this.totalItems / this.pageSize);
+  }
+
+  get hasPrev(): boolean {
+    return this.currentPage > 0;
+  }
+
+  get hasNext(): boolean {
+    return this.currentPage < this.totalPages - 1;
+  }
+
   constructor(private bookingService: BookingService) {}
 
   ngOnInit(): void {
@@ -27,12 +43,18 @@ export class BookingsComponent implements OnInit {
 
   fetchBookings(): void {
     this.loading = true;
-    this.bookingService.getBookings().subscribe({
+    this.errorMessage = '';
+
+    this.bookingService.getBookings(this.currentPage, this.pageSize).subscribe({
       next: (res: any) => {
         this.loading = false;
         console.log('BOOKINGS RESPONSE:', res);
 
-        this.bookings = (res.data || []).map((b: any) => ({
+        // Adjust these two lines to match your actual response shape
+        this.totalItems = res.data?.total ?? res.total ?? res.data?.length ?? 0;
+        const items = res.data?.items || res.data || [];
+
+        this.bookings = items.map((b: any) => ({
           id: b.bookingReference,
           visitor_name: b.vehicleRegistration || 'Unknown Visitor',
           email: '—',
@@ -49,6 +71,20 @@ export class BookingsComponent implements OnInit {
         this.errorMessage = err?.error?.message || 'Failed to load bookings.';
       }
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+    this.fetchBookings();
+  }
+
+  nextPage(): void {
+    this.goToPage(this.currentPage + 1);
+  }
+
+  prevPage(): void {
+    this.goToPage(this.currentPage - 1);
   }
 
   openBookingModal(): void {

@@ -7,9 +7,11 @@ export class BookingService {
   constructor(private http: HttpClient) {}
 
   // Fetch bookings
-  getBookings() {
-    return this.http.get(`${environment.apiUrl}/v1/admin/bookings`);
-  }
+getBookings(page: number = 0, size: number = 20) {
+  return this.http.get(`${environment.apiUrl}/v1/admin/bookings`, {
+    params: { page, size }
+  });
+}
 
   // Create booking
   createBooking(payload: any) {

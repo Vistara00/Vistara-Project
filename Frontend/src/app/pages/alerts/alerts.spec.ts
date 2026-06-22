@@ -41,12 +41,12 @@ describe('AlertsComponent', () => {
   it('should filter alerts by search query', () => {
     component.searchQuery = 'Elena';
     const filtered = component.filteredAlerts;
-    expect(filtered.every(a => a.name.includes('Elena'))).toBeTrue();
+    expect(filtered.every(a => a.name.includes('Elena'))).toBe(true);
   });
 
   it('should filter alerts by status', () => {
     component.statusFilter = 'Resolved';
     const filtered = component.filteredAlerts;
-    expect(filtered.every(a => a.status === 'Resolved')).toBeTrue();
+    expect(filtered.every(a => a.status === 'Resolved')).toBe(true);
   });
 });

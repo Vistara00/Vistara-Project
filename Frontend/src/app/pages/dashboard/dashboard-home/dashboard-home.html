@@ -1,24 +1,20 @@
 <!-- src/app/pages/dashboard/dashboard-home.html -->
 <div class="dashboard-home">
-  <!-- Header -->
-  <div class="header">
-    <h2>Executive Overview</h2>
-    <p>Live metrics and operational performance</p>
-  </div>
-
   <!-- Summary cards -->
   <div class="summary-cards">
+    <!-- Total Visitors -->
     <div class="summary-card visitors">
       <div class="icon-circle green">
         <i class="fas fa-users"></i>
       </div>
       <div class="card-content">
-        <p class="label">Total Visitors Today</p>
+        <p class="label">Daily Visitors</p>
         <h3>{{ totalVisitorsToday }}</h3>
-        <span class="trend up">+12%</span>
+        <span class="trend up">Live</span>
       </div>
     </div>
 
+    <!-- SOS Alerts -->
     <div class="summary-card alerts">
       <div class="icon-circle red">
         <i class="fas fa-exclamation-triangle"></i>
@@ -26,10 +22,12 @@
       <div class="card-content">
         <p class="label">SOS Alerts</p>
         <h3>{{ activeAlerts }}</h3>
-        <span class="priority">HIGH</span>
+        <span class="priority">{{ alertPriority || '—' }}</span>
+        <small class="status">{{ alertStatus || '' }}</small>
       </div>
     </div>
 
+    <!-- Park Occupancy -->
     <div class="summary-card occupancy">
       <div class="icon-circle blue">
         <i class="fas fa-chart-pie"></i>
@@ -41,14 +39,15 @@
       </div>
     </div>
 
+    <!-- Daily Revenue -->
     <div class="summary-card booking">
       <div class="icon-circle gold">
         <i class="fas fa-dollar-sign"></i>
       </div>
       <div class="card-content">
         <p class="label">Daily Revenue</p>
-        <h3>${{ dailyBookingValue | number }}</h3>
-        <span class="trend up">+5.42%</span>
+        <h3>${{ dailyBookingValue | number:'1.0-0' }}</h3>
+        <span class="trend up">Updated</span>
       </div>
     </div>
   </div>
@@ -59,22 +58,29 @@
     <div class="left-column">
       <!-- Visitor Flow Chart -->
       <div class="chart-card">
-        <h4>Visitor Flow</h4>
-        <p>Peak visitor activity was at {{ peakTime }}</p>
-        <div class="bar-chart">
-          <div
-            class="bar"
-            *ngFor="let v of visitorFlow"
-            [style.height.%]="(v.count / 500) * 100"
-          >
-            <span>{{ v.time }}</span>
+        <h4>Visitor Trend</h4>
+        <p>Daily visitor trend overview</p>
+
+        <div class="date-range">
+          <div class="date-field">
+            <label for="startDate">From:</label>
+            <input id="startDate" type="date" [(ngModel)]="startDate" (change)="updateVisitorTrend()" />
+          </div>
+          <div class="date-field">
+            <label for="endDate">To:</label>
+            <input id="endDate" type="date" [(ngModel)]="endDate" (change)="updateVisitorTrend()" />
           </div>
         </div>
+
+        <canvas #visitorTrendChart width="400" height="200"></canvas>
       </div>
+
+
+
 
       <!-- Live Visitor Distribution Map -->
       <div class="map-card">
-        <h4>Live Visitor Distribution</h4>
+        <h4>Live Distribution</h4>
         <div class="map-placeholder">
           <p>Map showing visitor distribution will appear here.</p>
         </div>
@@ -94,6 +100,16 @@
         </div>
       </div>
 
+      <!-- Quick Actions -->
+      <div class="actions-card">
+        <h4>Quick Actions</h4>
+        <div class="actions">
+          <button *ngFor="let action of quickActions" [ngClass]="action.color">
+            <i class="fas" [ngClass]="action.icon"></i> {{ action.label }}
+          </button>
+        </div>
+      </div>
+
       <!-- Recent Activity -->
       <div class="activity-card">
         <h4>Recent Activity</h4>
@@ -102,19 +118,6 @@
             <i class="fas" [ngClass]="item.icon"></i> {{ item.text }}
           </li>
         </ul>
-      </div>
-
-      <!-- Quick Actions -->
-      <div class="actions-card">
-        <h4>Quick Actions</h4>
-        <div class="actions">
-          <button
-            *ngFor="let action of quickActions"
-            [ngClass]="action.color"
-          >
-            <i class="fas" [ngClass]="action.icon"></i> {{ action.label }}
-          </button>
-        </div>
       </div>
     </div>
   </div>

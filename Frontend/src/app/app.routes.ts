@@ -64,6 +64,12 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () =>
           import('./pages/settings/settings').then(m => m.SettingsComponent)
+      },
+      // New Profile route
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./pages/profile/profile').then(m => m.ProfileComponent)
       }
     ]
   }

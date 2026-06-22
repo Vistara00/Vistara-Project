@@ -158,6 +158,27 @@ body, .app-shell { margin: 0; font-family: Inter, system-ui, -apple-system, "Seg
   display: none; /* set to block when you have unread alerts */
 }
 
+.profile-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  position: relative;
+}
+
+.dropdown-arrow {
+  font-size: 14px;
+  color: #333;
+  transition: transform 0.2s ease;
+}
+
+.profile-area:hover .dropdown-arrow {
+  color: #0a7a0a;
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
 
 
 .profile { display:flex; align-items:center; gap:10px; }
@@ -300,4 +321,47 @@ body, .app-shell { margin: 0; font-family: Inter, system-ui, -apple-system, "Seg
   .map-alerts { grid-template-columns: 1fr; }
   .sidebar { display:none; }
   .search input { width: 100%; }
+}
+
+
+.profile-dropdown {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  width: 200px;
+  font-family: 'Inter', sans-serif;
+}
+
+.profile-dropdown li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.profile-dropdown li i {
+  font-size: 16px;
+  color: #4caf50;
+}
+
+.profile-dropdown li:hover {
+  background: #f1f8f4;
+  color: #1b5e20;
+}
+
+.profile-dropdown li:hover i {
+  color: #1b5e20;
+}
+
+.dropdown-divider {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 6px 0;
 }

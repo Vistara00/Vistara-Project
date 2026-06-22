@@ -2,13 +2,13 @@
   <div class="brand" aria-hidden="false">
     <!-- Logo: absolute asset path + PNG fallback -->
     <picture>
-      <source srcset="/assets/images/logo.svg" type="image/svg+xml" />
+      <source srcset="/assets/icons/logo.svg" type="image/svg+xml" />
       <img
-        src="/assets/images/logo.png"
+        src="/assets/icons/logo.png"
         alt="Vistara logo"
         class="brand-logo"
         loading="eager"
-        onerror="this.onerror=null;this.src='/assets/images/logo.png';"
+        onerror="this.onerror=null;this.src='/assets/icons/logo.png';"
       />
     </picture>
 
@@ -116,7 +116,7 @@
       </div>
   <!-- Logo Preloader -->
   <div *ngIf="loading" class="preloader">
-    <img src="assets/images/logo.svg" alt="Vistara Logo" class="spinner-logo" />
+    <img src="assets/icons/logo.svg" alt="Vistara Logo" class="spinner-logo" />
     <p>Authenticating...</p>
   </div>
 

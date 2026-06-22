@@ -2,8 +2,8 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/auth.service';
+import { ProfileService } from '../../core/services/profile.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -18,7 +18,7 @@ export class DashboardComponent implements OnInit {
   showMenu = false;
 
   constructor(
-    private http: HttpClient,
+    private profileService: ProfileService,
     private authService: AuthService,
     private router: Router
   ) {}
@@ -26,9 +26,10 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.fetchProfile();
   }
-  //  Fetch profile and compute initials
+
+  // Fetch profile and compute initials
   private fetchProfile(): void {
-    this.http.get('/api/v1/profile').subscribe({
+    this.profileService.getProfile().subscribe({
       next: (res: any) => {
         const name = res?.data?.fullName || '';
         this.fullName = name;
@@ -41,12 +42,10 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  //  Toggle dropdown menu
   toggleMenu(): void {
     this.showMenu = !this.showMenu;
   }
 
-  // Close menu when clicking outside
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
     const target = event.target as HTMLElement;
@@ -55,13 +54,11 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  //  Navigation helper
   navigateTo(route: string): void {
     this.router.navigate([`/dashboard/${route}`]);
     this.showMenu = false;
   }
 
-  //  Logout
   onLogout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);

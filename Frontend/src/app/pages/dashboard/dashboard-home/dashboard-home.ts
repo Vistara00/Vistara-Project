@@ -1,7 +1,12 @@
 // src/app/pages/dashboard/dashboard-home.ts
-import { Component } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { Chart, registerables } from 'chart.js';
+import { environment } from '../../../core/environments/environment';
+
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-dashboard-home',
@@ -10,32 +15,201 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, FormsModule]
 })
-export class DashboardHomeComponent {
-  // Summary metrics
-  totalVisitorsToday = 1284;
-  activeAlerts = 3;
-  parkOccupancy = 26;
-  dailyBookingValue = 14520;
+export class DashboardHomeComponent implements OnInit, AfterViewInit {
+  @ViewChild('visitorTrendChart', { static: false }) visitorTrendChart!: ElementRef<HTMLCanvasElement>;
 
-  // Visitor flow data (for chart)
-  visitorFlow = [
-    { time: '08 AM', count: 180 },
-    { time: '10 AM', count: 320 },
-    { time: '12 PM', count: 480 },
-    { time: '02 PM', count: 410 },
-    { time: '04 PM', count: 300 },
-    { time: '06 PM', count: 220 }
-  ];
+  // Summary metrics
+  totalVisitorsToday = 0;
+  activeAlerts = 0;
+  parkOccupancy = 0;
+  dailyBookingValue = 0;
+  alertPriority = '';
+  alertStatus = '';
 
   // Weather widget
   weather = {
-    temperature: 24,
-    windSpeed: 12,
-    precipitation: 5,
-    condition: 'Sunny'
+    temperature: 0,
+    windSpeed: 0,
+    precipitation: 0,
+    condition: 'Loading...'
   };
 
-  // Recent activity
+  // Daily visitor trend
+  dailyVisitors: { day: number; count: number }[] = [];
+  startDate: string = '';
+  endDate: string = '';
+  private visitorChartInstance: Chart | null = null;
+
+  constructor(private http: HttpClient) { }
+
+  ngOnInit(): void {
+    this.fetchDashboardStats();
+    this.fetchWeather();
+  }
+
+  ngAfterViewInit(): void {
+    this.renderVisitorTrendChart(); // ensures chart renders once canvas exists
+  }
+
+  fetchDashboardStats(): void {
+    const url = `${environment.apiUrl}/admin/dashboard/stats`;
+
+    this.http.get<any>(url).subscribe({
+      next: (res) => {
+        if (res?.success && res?.data) {
+          const data = res.data;
+          this.totalVisitorsToday = data.activeVisitors || 0;
+          this.activeAlerts = data.emergencyAlertBreakdown?.[0]?.count || 0;
+          this.alertPriority = data.emergencyAlertBreakdown?.[0]?.priority || '';
+          this.alertStatus = data.emergencyAlertBreakdown?.[0]?.status || '';
+          this.parkOccupancy = Math.round((data.activeVisitors / 5000) * 100);
+          this.dailyBookingValue = data.dailyAverageRevenue || 0;
+
+          // Default daily trend for current month
+          const today = new Date();
+          this.dailyVisitors = this.generateDailyTrend(today.getMonth(), today.getFullYear());
+          this.renderVisitorTrendChart();
+        }
+      },
+      error: (err) => console.error('Dashboard API error:', err)
+    });
+  }
+
+  fetchWeather(): void {
+    const lat = -1.3733;
+    const lon = 36.8580;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation,wind_speed_10m,weathercode`;
+
+    this.http.get<any>(url).subscribe({
+      next: (res) => {
+        const current = res?.current;
+        if (current) {
+          this.weather.temperature = Math.round(current.temperature_2m);
+          this.weather.windSpeed = Math.round(current.wind_speed_10m);
+          this.weather.precipitation = current.precipitation ?? 0;
+          this.weather.condition = this.mapWeatherCode(current.weathercode);
+        }
+      },
+      error: (err) => console.error('Weather API error:', err)
+    });
+  }
+
+  private mapWeatherCode(code: number): string {
+    const map: Record<number, string> = {
+      0: 'Clear sky',
+      1: 'Mainly clear',
+      2: 'Partly cloudy',
+      3: 'Overcast',
+      45: 'Fog',
+      48: 'Depositing rime fog',
+      51: 'Light drizzle',
+      61: 'Light rain',
+      63: 'Moderate rain',
+      65: 'Heavy rain',
+      71: 'Light snow',
+      80: 'Rain showers',
+      95: 'Thunderstorm'
+    };
+    return map[code] || 'Unknown';
+  }
+  private generateDailyTrend(month: number, year: number): { day: number; count: number }[] {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Generate random visitor counts between 50 and 500 for each day
+    return Array.from({ length: daysInMonth }, (_, i) => ({
+      day: i + 1,
+      count: Math.floor(Math.random() * 450) + 50
+    }));
+  }
+
+
+
+  // private generateDailyTrend(month: number, year: number): { day: number; count: number }[] {
+  //   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  //   return Array.from({ length: daysInMonth }, (_, i) => ({
+  //     day: i + 1,
+  //     count: 0 // placeholder until backend data arrives
+  //   }));
+  // }
+
+  private renderVisitorTrendChart(): void {
+    if (!this.visitorTrendChart) return;
+    const ctx = this.visitorTrendChart.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    if (this.visitorChartInstance) {
+      this.visitorChartInstance.destroy();
+    }
+
+    const labels = this.dailyVisitors.map((d) => d.day);
+    const dataPoints = this.dailyVisitors.map((d) => d.count);
+
+    this.visitorChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Daily Visitors',
+            data: dataPoints,
+            borderColor: '#2e7d32',
+            backgroundColor: 'rgba(46, 125, 50, 0.2)',
+            tension: 0.3,
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            title: { display: true, text: 'Day of Month' },
+            ticks: { stepSize: 2 }, // show every 2 days
+            grid: { color: '#e0e0e0' }
+          },
+          y: {
+            title: { display: true, text: 'Visitors' },
+            beginAtZero: true,
+            suggestedMax: Math.max(...dataPoints, 100), // auto-scale based on data
+            ticks: {
+              stepSize: 100,
+              callback: (value: string | number) => {
+                const num = typeof value === 'string' ? parseFloat(value) : value;
+                return num;
+              }
+            },
+            grid: { color: '#e0e0e0' }
+          }
+        }
+      }
+    });
+  }
+
+
+  updateVisitorTrend(): void {
+    if (!this.startDate || !this.endDate) return;
+
+    const url = `${environment.apiUrl}/admin/dashboard/visitors?start=${this.startDate}&end=${this.endDate}`;
+    this.http.get<any>(url).subscribe({
+      next: (res) => {
+        if (res?.success && res?.data) {
+          // Map API response into dailyVisitors array
+          this.dailyVisitors = res.data.map((d: any) => ({
+            day: new Date(d.date).getDate(),
+            count: d.count
+          }));
+          this.renderVisitorTrendChart();
+        }
+      },
+      error: (err) => console.error('Visitor trend API error:', err)
+    });
+  }
+
+
+  // Existing demo data
   recentActivity = [
     { icon: 'fa-ticket-alt', text: 'Ticket #1023 Verified' },
     { icon: 'fa-satellite-dish', text: 'Ranger Uplink Active' },
@@ -44,17 +218,9 @@ export class DashboardHomeComponent {
     { icon: 'fa-ticket-alt', text: 'Ticket #1024 Verified' }
   ];
 
-  // Quick actions
   quickActions = [
     { label: 'Broadcast SOS', icon: 'fa-bullhorn', color: 'red' },
     { label: 'New Booking', icon: 'fa-calendar-plus', color: 'green' },
     { label: 'Export Report', icon: 'fa-file-export', color: 'gray' }
   ];
-
-  // Helper to get peak time
-  get peakTime(): string {
-    const max = Math.max(...this.visitorFlow.map(v => v.count));
-    const peak = this.visitorFlow.find(v => v.count === max);
-    return peak ? peak.time : '';
-  }
 }

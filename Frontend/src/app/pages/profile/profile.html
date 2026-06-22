@@ -1,0 +1,121 @@
+<div class="profile-card">
+  <!-- Header -->
+  <div class="profile-header">
+    <div class="profile-icon">
+      <span>{{ initials }}</span>
+    </div>
+    <div class="profile-title">
+      <h2>Personal Information</h2>
+      <p>Manage your personal details and emergency contact information.</p>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <form (ngSubmit)="saveProfile()" #profileForm="ngForm" class="profile-form">
+    <!-- Row 1 -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Full Name</label>
+        <div class="input-wrapper">
+          <i class="fa fa-user"></i>
+          <input
+            type="text"
+            [(ngModel)]="profileData.fullName"
+            name="fullName"
+            required
+            (input)="onFieldChange()"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <div class="input-wrapper">
+          <i class="fa fa-envelope"></i>
+          <input
+            type="email"
+            [(ngModel)]="profileData.email"
+            name="email"
+            required
+            (input)="onFieldChange()"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Phone Number</label>
+        <div class="input-wrapper">
+          <i class="fa fa-phone"></i>
+          <input
+            type="text"
+            [(ngModel)]="profileData.phoneNumber"
+            name="phoneNumber"
+            required
+            (input)="onFieldChange()"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>National ID</label>
+        <div class="input-wrapper">
+          <i class="fa fa-id-card"></i>
+          <input
+            type="text"
+            [(ngModel)]="profileData.nationalId"
+            name="nationalId"
+            (input)="onFieldChange()"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3 -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Emergency Contact Name</label>
+        <div class="input-wrapper">
+          <i class="fa fa-user"></i>
+          <input
+            type="text"
+            [(ngModel)]="profileData.emergencyContactName"
+            name="emergencyContactName"
+            (input)="onFieldChange()"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Emergency Contact Phone</label>
+        <div class="input-wrapper">
+          <i class="fa fa-phone"></i>
+          <input
+            type="text"
+            [(ngModel)]="profileData.emergencyContactPhone"
+            name="emergencyContactPhone"
+            (input)="onFieldChange()"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Security banner -->
+    <div class="security-banner">
+      <i class="fa fa-shield-alt"></i>
+      <span>Your information is secure and encrypted</span>
+    </div>
+
+    <!-- Save button -->
+    <button
+      type="submit"
+      class="save-btn"
+      [disabled]="!isModified"
+      [class.active]="isModified"
+    >
+      <i class="fa fa-save"></i> Save Changes
+    </button>
+  </form>
+</div>

@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { AuthService } from '../../core/auth.service'; // ✅ import AuthService
+import { AuthService } from '../../core/auth.service'; 
+import { environment } from '../../core/environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -19,7 +20,7 @@ export class LoginComponent implements OnInit {
   showPassword = false;
   remember = false;
 
-  private readonly API_URL = '/api/v1/auth/login';
+private readonly API_URL = `${environment.apiUrl}/v1/auth/login`;
 
   constructor(
     private fb: FormBuilder,
