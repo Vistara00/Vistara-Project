@@ -1,6 +1,7 @@
 package com.vistara.tourist_tracking_system.service;
 
 import com.vistara.tourist_tracking_system.dto.BookingRequest;
+import com.vistara.tourist_tracking_system.dto.AdminMpesaBookingRequest;
 import com.vistara.tourist_tracking_system.dto.MpesaStkRequest;
 import com.vistara.tourist_tracking_system.dto.MpesaStkResponse;
 import com.vistara.tourist_tracking_system.model.Booking;
@@ -8,6 +9,7 @@ import com.vistara.tourist_tracking_system.model.User;
 import com.vistara.tourist_tracking_system.model.Role;
 import com.vistara.tourist_tracking_system.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,12 +19,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final MpesaService mpesaService;
+    private final NotificationService notificationService;  // Inject NotificationService
 
     @Transactional
     public Booking createBooking(User tourist, BookingRequest request) {
@@ -43,40 +47,33 @@ public class BookingService {
         booking.setAmount(request.getAmount());
         booking.setPaymentStatus(Booking.PaymentStatus.PENDING);
         booking.setBookingStatus(Booking.BookingStatus.PENDING);
-
-        String ref = generateBookingReference();
-        booking.setBookingReference(ref);
+        booking.setBookingReference(generateBookingReference());
 
         Booking saved = bookingRepository.save(booking);
 
-        if ("MPESA".equalsIgnoreCase(request.getPaymentMethod())) {
-            MpesaStkRequest mpesaRequest = new MpesaStkRequest();
-            mpesaRequest.setPhoneNumber(tourist.getPhoneNumber());
-            mpesaRequest.setAmount(request.getAmount().intValue());
-            mpesaRequest.setAccountReference(saved.getBookingReference());
-            mpesaRequest.setTransactionDesc("Vistara Park Entry Payment");
+        // Send notification to tourist about booking creation
+        notificationService.createNotification(
+                tourist,
+                "Booking Created",
+                "Your booking " + saved.getBookingReference() + " has been created. Please complete payment.",
+                "BOOKING",
+                saved.getId(),
+                false
+        );
 
-            try {
-                MpesaStkResponse stkResponse = mpesaService.stkPush(mpesaRequest);
-                saved.setPaymentTrackingId(stkResponse.getCheckoutRequestId());
-                bookingRepository.save(saved);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to initiate M-Pesa payment: " + e.getMessage());
-            }
-        }
+        // Notify admin about new booking
+        notificationService.createNotificationByEmail(
+                "admin@vistara.com",
+                "New Booking Created",
+                "User " + tourist.getFullName() + " created a booking: " + saved.getBookingReference(),
+                "BOOKING",
+                saved.getId(),
+                false
+        );
 
+        log.info("Booking created: {} for user {}", saved.getBookingReference(), tourist.getEmail());
         return saved;
     }
-
-//    private String generateBookingReference() {
-//        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-//        long count = bookingRepository.count() + 1;
-//        return String.format("VST-%s-%04d", datePart, count);
-//    }
-
-//    private String generateBookingReference() {
-//        return "VST-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-//    }
 
     private String generateBookingReference() {
         String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -84,15 +81,40 @@ public class BookingService {
         String randomPart = String.format("%04d", (int) (Math.random() * 10000));
         return String.format("VST-%s-%s-%s", datePart, timePart, randomPart);
     }
+
     @Transactional
     public void confirmPayment(Long bookingId, String paymentReference, String paymentStatus) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
         booking.setPaymentReference(paymentReference);
         booking.setPaymentStatus(paymentStatus);
+
         if (Booking.PaymentStatus.PAID.equals(paymentStatus)) {
             booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
+
+            // Notify tourist about successful payment
+            notificationService.createNotification(
+                    booking.getUser(),
+                    "Payment Confirmed",
+                    "Your payment for booking " + booking.getBookingReference() + " has been confirmed.",
+                    "PAYMENT",
+                    bookingId,
+                    false
+            );
+
+            // Notify admin about successful payment
+            notificationService.createNotificationByEmail(
+                    "admin@vistara.com",
+                    "Payment Confirmed",
+                    "Booking " + booking.getBookingReference() + " has been paid.",
+                    "PAYMENT",
+                    bookingId,
+                    false
+            );
+
+            log.info("Payment confirmed for booking: {}", booking.getBookingReference());
         }
+
         bookingRepository.save(booking);
     }
 
@@ -105,6 +127,16 @@ public class BookingService {
         }
         booking.setBookingStatus(Booking.BookingStatus.CANCELLED);
         bookingRepository.save(booking);
+
+        // Notify tourist about cancellation
+        notificationService.createNotification(
+                booking.getUser(),
+                "Booking Cancelled",
+                "Your booking " + booking.getBookingReference() + " has been cancelled.",
+                "BOOKING",
+                bookingId,
+                false
+        );
     }
 
     @Transactional
@@ -112,13 +144,11 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        // Check if booking is in pending state
         if (!Booking.PaymentStatus.PENDING.equals(booking.getPaymentStatus()) ||
                 !Booking.BookingStatus.PENDING.equals(booking.getBookingStatus())) {
             throw new RuntimeException("Cannot delete booking – only pending bookings can be deleted");
         }
 
-        // Check authorization: admin can delete any; visitor only their own
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;
         boolean isOwner = booking.getUser().getId().equals(currentUser.getId());
         if (!isAdmin && !isOwner) {
@@ -126,6 +156,7 @@ public class BookingService {
         }
 
         bookingRepository.delete(booking);
+        log.info("Booking {} deleted by user {}", bookingId, currentUser.getEmail());
     }
 
     @Transactional
@@ -144,7 +175,76 @@ public class BookingService {
         booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
         booking.setBookingReference(generateBookingReference());
         booking.setAdminNotes(adminNotes);
-        return bookingRepository.save(booking);
+
+        Booking saved = bookingRepository.save(booking);
+
+        // Notify user about confirmed booking (cash booking)
+        notificationService.createNotification(
+                user,
+                "Booking Confirmed",
+                "Your booking " + saved.getBookingReference() + " has been confirmed (CASH payment).",
+                "BOOKING",
+                saved.getId(),
+                false
+        );
+
+        log.info("Confirmed booking created: {} for user {}", saved.getBookingReference(), user.getEmail());
+        return saved;
+    }
+
+    @Transactional
+    public Booking createBookingWithMpesa(User tourist, AdminMpesaBookingRequest request) {
+        if (request.getCheckInDate().isBefore(LocalDate.now())) {
+            throw new RuntimeException("Check‑in date cannot be in the past");
+        }
+        if (request.getCheckOutDate().isBefore(request.getCheckInDate())) {
+            throw new RuntimeException("Check‑out date must be after check‑in date");
+        }
+
+        Booking booking = new Booking();
+        booking.setUser(tourist);
+        booking.setCheckInDate(request.getCheckInDate());
+        booking.setCheckOutDate(request.getCheckOutDate());
+        booking.setGroupSize(request.getNumberOfPeople());
+        booking.setVehicleRegistration(request.getVehicleRegistration());
+        booking.setPaymentMethod("MPESA");
+        booking.setAmount(request.getAmount());
+        booking.setPaymentStatus(Booking.PaymentStatus.PENDING);
+        booking.setBookingStatus(Booking.BookingStatus.PENDING);
+        booking.setBookingReference(generateBookingReference());
+        booking.setAdminNotes(request.getNotes());
+
+        Booking saved = bookingRepository.save(booking);
+
+        // Notify tourist about booking creation
+        notificationService.createNotification(
+                tourist,
+                "Booking Created (M-Pesa)",
+                "Your booking " + saved.getBookingReference() + " has been created. Check your phone for M-Pesa prompt.",
+                "BOOKING",
+                saved.getId(),
+                false
+        );
+
+        // Initiate M-Pesa STK Push
+        try {
+            MpesaStkRequest mpesaRequest = new MpesaStkRequest();
+            mpesaRequest.setPhoneNumber(request.getPhoneNumber());
+            mpesaRequest.setAmount(request.getAmount().intValue());
+            mpesaRequest.setAccountReference(saved.getBookingReference());
+            mpesaRequest.setTransactionDesc("Vistara Park Entry Payment");
+
+            MpesaStkResponse stkResponse = mpesaService.stkPush(mpesaRequest);
+            saved.setPaymentTrackingId(stkResponse.getCheckoutRequestId());
+            bookingRepository.save(saved);
+
+            log.info("M-Pesa STK Push initiated for booking: {}", saved.getBookingReference());
+        } catch (Exception e) {
+            log.error("Failed to initiate M-Pesa payment for booking {}: {}", saved.getBookingReference(), e.getMessage());
+            throw new RuntimeException("Failed to initiate M-Pesa payment: " + e.getMessage());
+        }
+
+        return saved;
     }
 
     public List<Booking> getBookingsByUser(User user) {

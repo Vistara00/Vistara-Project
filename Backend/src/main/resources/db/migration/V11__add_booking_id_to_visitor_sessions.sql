@@ -1,5 +1,5 @@
 -- =====================================================
--- V11: Add booking_id to visitor_sessions (reference to bookings)
+-- V11: Add booking_id to visitor_sessions
 -- =====================================================
 
 ALTER TABLE visitor_sessions ADD COLUMN IF NOT EXISTS booking_id BIGINT REFERENCES bookings(id) ON DELETE SET NULL;
