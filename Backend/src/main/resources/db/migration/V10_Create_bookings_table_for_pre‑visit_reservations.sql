@@ -10,11 +10,12 @@ CREATE TABLE IF NOT EXISTS bookings (
     check_out_date          DATE NOT NULL,
     group_size              INTEGER NOT NULL CHECK (group_size > 0),
     vehicle_registration    VARCHAR(50),
-    payment_method          VARCHAR(20) NOT NULL CHECK (payment_method IN ('MPESA', 'E_CITIZEN')),
+    payment_method          VARCHAR(20) NOT NULL CHECK (payment_method IN ('MPESA', 'E_CITIZEN', 'CASH')),
     amount                  DECIMAL(10,2) NOT NULL CHECK (amount > 0),
     payment_reference       VARCHAR(100),
     payment_status          VARCHAR(20) DEFAULT 'PENDING' CHECK (payment_status IN ('PENDING', 'PAID', 'FAILED', 'REFUNDED')),
     booking_status          VARCHAR(20) DEFAULT 'PENDING' CHECK (booking_status IN ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED')),
+    payment_tracking_id     VARCHAR(100),
     admin_notes             TEXT,
     created_by_admin_id     BIGINT REFERENCES users(id) ON DELETE SET NULL,
     created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -25,15 +26,15 @@ COMMENT ON TABLE bookings IS 'Pre‑visit bookings made by tourists or manually 
 COMMENT ON COLUMN bookings.booking_reference IS 'Unique reference code for the booking (e.g., VST-20250610-001)';
 COMMENT ON COLUMN bookings.payment_status IS 'PENDING, PAID, FAILED, REFUNDED';
 COMMENT ON COLUMN bookings.booking_status IS 'PENDING, CONFIRMED, CANCELLED, COMPLETED';
+COMMENT ON COLUMN bookings.payment_tracking_id IS 'M-Pesa CheckoutRequestID for linking STK push callbacks';
 
--- Indexes
 CREATE INDEX idx_bookings_user ON bookings(user_id);
 CREATE INDEX idx_bookings_dates ON bookings(check_in_date, check_out_date);
 CREATE INDEX idx_bookings_payment_status ON bookings(payment_status);
 CREATE INDEX idx_bookings_booking_status ON bookings(booking_status);
 CREATE INDEX idx_bookings_reference ON bookings(booking_reference);
+CREATE INDEX idx_bookings_payment_tracking_id ON bookings(payment_tracking_id);
 
--- Trigger for updated_at
 CREATE TRIGGER update_bookings_updated_at
     BEFORE UPDATE ON bookings
     FOR EACH ROW

@@ -1,6 +1,5 @@
 -- =====================================================
 -- V2: Create visitor_sessions table (without payment fields)
--- Description: Tracks active visitor check‑in/check‑out sessions
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS visitor_sessions (
@@ -18,7 +17,6 @@ CREATE TABLE IF NOT EXISTS visitor_sessions (
     notes                 TEXT,
     created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT chk_visitor_session_dates CHECK (check_out_time IS NULL OR check_out_time >= check_in_time),
     CONSTRAINT chk_group_size_positive   CHECK (group_size > 0)
     );
@@ -28,13 +26,11 @@ COMMENT ON COLUMN visitor_sessions.last_known_location IS 'Last known GPS locati
 COMMENT ON COLUMN visitor_sessions.sos_triggered       IS 'Whether SOS has been triggered during this session';
 COMMENT ON COLUMN visitor_sessions.has_emergency       IS 'Whether an emergency is currently active for this session';
 
--- Trigger for updated_at
 CREATE TRIGGER update_visitor_sessions_updated_at
     BEFORE UPDATE ON visitor_sessions
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Indexes
 CREATE INDEX IF NOT EXISTS idx_visitor_sessions_active
     ON visitor_sessions(is_active) WHERE is_active = TRUE;
 

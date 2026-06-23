@@ -1,44 +1,32 @@
 -- =====================================================
 -- V1: Create users table for Vistara System
--- Description: Stores all user information (tourists, rangers, admins)
 -- =====================================================
 
--- Enable PostGIS extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS postgis_topology;
 
--- Create ENUM types
-DO $$ BEGIN
-    CREATE TYPE user_role AS ENUM ('TOURIST', 'PARK_RANGER', 'ADMIN');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
--- Create users table
 CREATE TABLE IF NOT EXISTS users (
-    id                      BIGSERIAL    PRIMARY KEY,
-    email                   VARCHAR(255) NOT NULL UNIQUE,
+                                     id                      BIGSERIAL    PRIMARY KEY,
+                                     email                   VARCHAR(255) NOT NULL UNIQUE,
     password                VARCHAR(255) NOT NULL,
     full_name               VARCHAR(255) NOT NULL,
     phone_number            VARCHAR(20)  NOT NULL,
     national_id             VARCHAR(50)  UNIQUE,
-    role                    user_role    NOT NULL DEFAULT 'TOURIST',
+    role                    VARCHAR(20)  NOT NULL DEFAULT 'TOURIST',
     is_active               BOOLEAN      DEFAULT TRUE,
     is_verified             BOOLEAN      DEFAULT FALSE,
     emergency_contact_name  VARCHAR(255),
     emergency_contact_phone VARCHAR(20),
-    -- FIX (Bug 8): Generated tsvector column for reliable full-text search.
-    -- Defined here so the GIN index in V6 can reference it directly.
     name_search_vector      TSVECTOR GENERATED ALWAYS AS (
-        to_tsvector('english', full_name || ' ' || COALESCE(email, ''))
+                                                             to_tsvector('english', full_name || ' ' || COALESCE(email, ''))
     ) STORED,
     last_login              TIMESTAMP,
     created_at              TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    deleted_at              TIMESTAMP
-);
+    deleted_at              TIMESTAMP,
+    CONSTRAINT chk_user_role CHECK (role IN ('TOURIST', 'PARK_RANGER', 'ADMIN'))
+    );
 
--- Add comments for documentation
 COMMENT ON TABLE  users IS 'Stores all system users including tourists, park rangers, and administrators';
 COMMENT ON COLUMN users.email IS 'User email address - used for login';
 COMMENT ON COLUMN users.role  IS 'User role: TOURIST, PARK_RANGER, or ADMIN';
@@ -46,16 +34,20 @@ COMMENT ON COLUMN users.emergency_contact_name  IS 'Name of person to contact in
 COMMENT ON COLUMN users.emergency_contact_phone IS 'Phone number of emergency contact';
 COMMENT ON COLUMN users.name_search_vector IS 'Generated tsvector for full-text search on name and email';
 
--- Function to automatically update updated_at (shared by all tables)
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
+RETURN NEW;
 END;
 $$ LANGUAGE 'plpgsql';
 
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active) WHERE is_active = TRUE;

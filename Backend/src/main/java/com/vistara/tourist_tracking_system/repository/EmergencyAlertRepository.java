@@ -2,6 +2,7 @@ package com.vistara.tourist_tracking_system.repository;
 
 import com.vistara.tourist_tracking_system.model.EmergencyAlert;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,4 +16,8 @@ public interface EmergencyAlertRepository extends JpaRepository<EmergencyAlert, 
     List<EmergencyAlert> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
     List<EmergencyAlert> findByAlertStatusOrderByCreatedAtDesc(EmergencyAlert.AlertStatus alertStatus);
+
+    // Group by status and priority
+    @Query("SELECT ea.alertStatus, ea.priority, COUNT(ea) FROM EmergencyAlert ea GROUP BY ea.alertStatus, ea.priority")
+    List<Object[]> countByStatusAndPriority();
 }

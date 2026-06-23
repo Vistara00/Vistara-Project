@@ -9,10 +9,7 @@ import com.vistara.tourist_tracking_system.model.VisitorSession;
 import com.vistara.tourist_tracking_system.repository.EmergencyAlertRepository;
 import com.vistara.tourist_tracking_system.repository.UserRepository;
 import com.vistara.tourist_tracking_system.repository.VisitorSessionRepository;
-import com.vistara.tourist_tracking_system.service.BookingService;
-import com.vistara.tourist_tracking_system.service.EmergencyService;
-import com.vistara.tourist_tracking_system.service.UserService;
-import com.vistara.tourist_tracking_system.service.VisitorService;
+import com.vistara.tourist_tracking_system.service.*;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,10 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -39,6 +33,8 @@ public class AdminController {
     private final VisitorService visitorService;
     private final BookingService bookingService;
     private final UserService userService;
+    private final DashboardService dashboardService;
+
 
     // ========== USER MANAGEMENT ==========
 
@@ -65,12 +61,8 @@ public class AdminController {
     }
 
     @GetMapping("/dashboard/stats")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboardStats() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("activeVisitors", sessionRepository.findByActiveTrue().size());
-        stats.put("pendingAlerts", alertRepository.findByAlertStatus(EmergencyAlert.AlertStatus.PENDING).size());
-        stats.put("totalUsers", userRepository.count());
-        stats.put("todayCheckins", sessionRepository.findByCheckInTimeAfter(LocalDateTime.now().minusHours(24)).size());
+    public ResponseEntity<ApiResponse<DashboardStats>> getDashboardStats() {
+        DashboardStats stats = dashboardService.getDashboardStats();
         return ResponseEntity.ok(ApiResponse.success(stats, "Dashboard stats retrieved"));
     }
 
@@ -123,10 +115,11 @@ public class AdminController {
 
     @PostMapping("/bookings/cash-booking")
     public ResponseEntity<ApiResponse<BookingResponse>> createCashBooking(
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails adminDetails,
+            @AuthenticationPrincipal UserDetails adminDetails,
             @Valid @RequestBody CashBookingRequest request) {
 
-        User tourist = userService.createTourist(
+        // Find existing user or create a new one
+        User tourist = userService.findOrCreateTourist(
                 request.getFullName(),
                 request.getEmail(),
                 request.getPhoneNumber()
@@ -182,6 +175,28 @@ public class AdminController {
     public ResponseEntity<String> mpesaCallback(@RequestBody String callbackJson) {
         System.out.println("M-Pesa callback received: " + callbackJson);
         return ResponseEntity.ok("{\"ResultCode\":0,\"ResultDesc\":\"Success\"}");
+    }
+
+    @PostMapping("/bookings/mpesa-booking")
+    public ResponseEntity<ApiResponse<BookingResponse>> createMpesaBooking(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails adminDetails,
+            @Valid @RequestBody AdminMpesaBookingRequest request) {
+
+        // Find existing user or create a new one
+        User tourist = userService.findOrCreateTourist(
+                request.getFullName(),
+                request.getEmail(),
+                request.getPhoneNumber()
+        );
+
+        // Create booking and initiate M-Pesa payment
+        Booking booking = bookingService.createBookingWithMpesa(tourist, request);
+
+        BookingResponse response = convertToResponse(booking);
+        return ResponseEntity.ok(ApiResponse.success(
+                response,
+                "M-Pesa payment initiated. Visitor will receive a prompt on their phone."
+        ));
     }
 
     // ========== PRIVATE HELPERS ==========
