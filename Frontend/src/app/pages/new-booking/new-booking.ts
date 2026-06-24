@@ -44,7 +44,7 @@ confirmBooking(form?: any): void {
       notes: bookingData.notes || "Awaiting Mpesa payment"
     };
 
-    this.http.post('/api/v1/mpesa/initiate', payload).subscribe({
+    this.http.post('/api/v1/admin/bookings/mpesa-booking', payload).subscribe({
       next: () => this.showSuccess(),
       error: () => this.loading = false
     });

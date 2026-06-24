@@ -56,7 +56,7 @@ export class BookingsComponent implements OnInit {
 
         this.bookings = items.map((b: any) => ({
           id: b.bookingReference,
-          visitor_name: b.vehicleRegistration || 'Unknown Visitor',
+          visitor_name: b.userFullName || 'Unknown Visitor',
           email: '—',
           payment_method: b.paymentMethod,
           checkin_date: b.checkInDate,
