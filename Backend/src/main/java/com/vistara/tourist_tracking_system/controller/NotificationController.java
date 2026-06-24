@@ -95,4 +95,15 @@ public class NotificationController {
 
         return ResponseEntity.ok(ApiResponse.success(responses, "Broadcast sent successfully"));
     }
+
+    @GetMapping("/broadcasts")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getMyBroadcasts(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.findByEmail(userDetails.getUsername());
+        List<NotificationResponse> broadcasts = notificationService.getUserNotifications(user)
+                .stream()
+                .filter(n -> n.isBroadcast())
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success(broadcasts, "Your broadcasts retrieved"));
+    }
 }

@@ -67,6 +67,9 @@ public class BookingController {
         response.setId(booking.getId());
         response.setBookingReference(booking.getBookingReference());
         response.setUserId(booking.getUser().getId());
+        response.setUserFullName(booking.getUser().getFullName());
+        response.setUserEmail(booking.getUser().getEmail());
+        response.setUserPhoneNumber(booking.getUser().getPhoneNumber());
         response.setCheckInDate(booking.getCheckInDate());
         response.setCheckOutDate(booking.getCheckOutDate());
         response.setGroupSize(booking.getGroupSize());

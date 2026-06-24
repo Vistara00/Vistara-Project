@@ -4,6 +4,7 @@ import com.vistara.tourist_tracking_system.dto.*;
 import com.vistara.tourist_tracking_system.exception.DuplicateResourceException;
 import com.vistara.tourist_tracking_system.model.Booking;
 import com.vistara.tourist_tracking_system.model.EmergencyAlert;
+import com.vistara.tourist_tracking_system.model.Notification;
 import com.vistara.tourist_tracking_system.model.User;
 import com.vistara.tourist_tracking_system.model.VisitorSession;
 import com.vistara.tourist_tracking_system.repository.EmergencyAlertRepository;
@@ -34,7 +35,7 @@ public class AdminController {
     private final BookingService bookingService;
     private final UserService userService;
     private final DashboardService dashboardService;
-
+    private final NotificationService notificationService;  // ADDED
 
     // ========== USER MANAGEMENT ==========
 
@@ -199,6 +200,49 @@ public class AdminController {
         ));
     }
 
+    // ========== BROADCAST MANAGEMENT ==========
+
+    @PostMapping("/broadcast")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> broadcastNotification(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails adminDetails,
+            @Valid @RequestBody BroadcastRequest request) {
+
+        List<Notification> notifications;
+
+        if (request.getUserId() != null && request.getUserId() > 0) {
+            // Broadcast to specific user
+            Notification notification = notificationService.broadcastToUser(
+                    request.getUserId(),
+                    request.getTitle(),
+                    request.getMessage()
+            );
+            notifications = List.of(notification);
+        } else {
+            // Broadcast to all users
+            notifications = notificationService.broadcastToAllUsers(
+                    request.getTitle(),
+                    request.getMessage()
+            );
+        }
+
+        List<NotificationResponse> responses = notifications.stream()
+                .map(this::convertToNotificationResponse)
+                .collect(Collectors.toList());
+
+        String message = request.getUserId() != null && request.getUserId() > 0
+                ? "Broadcast sent to user successfully"
+                : "Broadcast sent to all users successfully";
+
+        return ResponseEntity.ok(ApiResponse.success(responses, message));
+    }
+
+    @GetMapping("/broadcasts")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getAllBroadcasts(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails adminDetails) {
+        List<NotificationResponse> broadcasts = notificationService.getAllBroadcasts();
+        return ResponseEntity.ok(ApiResponse.success(broadcasts, "All broadcasts retrieved"));
+    }
+
     // ========== PRIVATE HELPERS ==========
 
     private BookingResponse convertToResponse(Booking booking) {
@@ -206,6 +250,9 @@ public class AdminController {
         response.setId(booking.getId());
         response.setBookingReference(booking.getBookingReference());
         response.setUserId(booking.getUser().getId());
+        response.setUserFullName(booking.getUser().getFullName());
+        response.setUserEmail(booking.getUser().getEmail());
+        response.setUserPhoneNumber(booking.getUser().getPhoneNumber());
         response.setCheckInDate(booking.getCheckInDate());
         response.setCheckOutDate(booking.getCheckOutDate());
         response.setGroupSize(booking.getGroupSize());
@@ -216,6 +263,19 @@ public class AdminController {
         response.setBookingStatus(booking.getBookingStatus());
         response.setPaymentReference(booking.getPaymentReference());
         response.setCreatedAt(booking.getCreatedAt());
+        return response;
+    }
+
+    private NotificationResponse convertToNotificationResponse(Notification notification) {
+        NotificationResponse response = new NotificationResponse();
+        response.setId(notification.getId());
+        response.setTitle(notification.getTitle());
+        response.setMessage(notification.getMessage());
+        response.setType(notification.getType());
+        response.setRead(notification.isRead());
+        response.setBroadcast(notification.isBroadcast());
+        response.setReferenceId(notification.getReferenceId());
+        response.setCreatedAt(notification.getCreatedAt());
         return response;
     }
 }

@@ -127,6 +127,31 @@ public class NotificationService {
         }
     }
 
+    // Broadcast to all users
+    @Transactional
+    public List<Notification> broadcastToAllUsers(String title, String message) {
+        List<User> allUsers = userRepository.findAll();
+        return allUsers.stream()
+                .map(user -> createNotification(user, title, message, "BROADCAST", null, true))
+                .collect(Collectors.toList());
+    }
+
+    // Broadcast to a specific user
+    @Transactional
+    public Notification broadcastToUser(Long userId, String title, String message) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return createNotification(user, title, message, "BROADCAST", null, true);
+    }
+
+    // Get all broadcast notifications (for admin)
+    public List<NotificationResponse> getAllBroadcasts() {
+        return notificationRepository.findBroadcastNotifications()
+                .stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
     private NotificationResponse convertToResponse(Notification notification) {
         NotificationResponse response = new NotificationResponse();
         response.setId(notification.getId());

@@ -10,6 +10,9 @@ public class BookingResponse {
     private Long id;
     private String bookingReference;
     private Long userId;
+    private String userFullName;      // NEW
+    private String userEmail;         // NEW
+    private String userPhoneNumber;   // NEW
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
     private Integer groupSize;
