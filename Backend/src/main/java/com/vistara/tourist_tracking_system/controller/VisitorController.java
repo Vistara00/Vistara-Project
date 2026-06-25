@@ -1,5 +1,6 @@
 package com.vistara.tourist_tracking_system.controller;
 
+import com.vistara.tourist_tracking_system.dto.ActiveSessionResponse;
 import com.vistara.tourist_tracking_system.dto.ApiResponse;
 import com.vistara.tourist_tracking_system.model.User;
 import com.vistara.tourist_tracking_system.model.VisitorSession;
@@ -21,12 +22,13 @@ public class VisitorController {
     private final VisitorService visitorService;
     private final UserService userService;
 
-    // Get active session for the authenticated visitor
     @GetMapping("/active-session")
-    public ResponseEntity<ApiResponse<VisitorSession>> getActiveSession(
+    public ResponseEntity<ApiResponse<ActiveSessionResponse>> getActiveSession(
             @AuthenticationPrincipal UserDetails userDetails) {
         User user = userService.findByEmail(userDetails.getUsername());
         VisitorSession session = visitorService.findActiveSession(user);
-        return ResponseEntity.ok(ApiResponse.success(session, "Active session retrieved"));
+
+        ActiveSessionResponse response = visitorService.convertToActiveSessionResponse(session);
+        return ResponseEntity.ok(ApiResponse.success(response, "Active session retrieved"));
     }
 }

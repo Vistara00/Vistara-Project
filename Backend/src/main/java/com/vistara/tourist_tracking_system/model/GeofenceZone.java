@@ -1,43 +1,34 @@
 package com.vistara.tourist_tracking_system.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
-
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "geofence_zones")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class GeofenceZone {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "zone_name", nullable = false, length = 255)
+    @Column(name = "zone_name", nullable = false)
     private String zoneName;
 
-    @Column(name = "zone_description", columnDefinition = "TEXT")
+    @Column(name = "zone_description")
     private String zoneDescription;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "zone_type", nullable = false)
     private ZoneType zoneType;
 
-// Keep your enum as is – JPA will convert to String automatically
+    @Column(name = "zone_boundary", columnDefinition = "geometry(Polygon,4326)", nullable = false)
+    private Polygon zoneBoundary;
 
-    @Column(name = "zone_boundary", columnDefinition = "GEOMETRY(POLYGON, 4326)", nullable = false)
-    private Polygon zoneBoundary;  // Requires JTS library
-
-    @Column(name = "center_point", columnDefinition = "GEOMETRY(POINT, 4326)")
+    @Column(name = "center_point", columnDefinition = "geometry(Point,4326)")
     private Point centerPoint;
 
     @Column(name = "radius_meters")
@@ -64,15 +55,24 @@ public class GeofenceZone {
     @Column(name = "created_by")
     private Long createdBy;
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     public enum ZoneType {
         SAFE, RESTRICTED, DANGER, WILDLIFE_AREA, EMERGENCY_EXIT
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

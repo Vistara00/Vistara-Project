@@ -1,5 +1,6 @@
 package com.vistara.tourist_tracking_system.service;
 
+import com.vistara.tourist_tracking_system.dto.ActiveSessionResponse;
 import com.vistara.tourist_tracking_system.model.Booking;
 import com.vistara.tourist_tracking_system.model.User;
 import com.vistara.tourist_tracking_system.model.VisitorSession;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -21,7 +23,7 @@ public class VisitorService {
     private final VisitorSessionRepository sessionRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
-    private final NotificationService notificationService;  // Inject NotificationService
+    private final NotificationService notificationService;
 
     @Transactional
     public VisitorSession checkInByAdmin(Long bookingId, Long walkInUserId, String vehicleRegistrationOverride, String notes, User admin) {
@@ -51,6 +53,20 @@ public class VisitorService {
             throw new RuntimeException("Either bookingId or walkInUserId must be provided for check‑in");
         }
 
+        // Check if user already has an active session
+        List<VisitorSession> existingActiveSessions = sessionRepository.findByUserAndActiveTrue(tourist);
+        if (!existingActiveSessions.isEmpty()) {
+            // Close existing active sessions before creating a new one
+            for (VisitorSession existingSession : existingActiveSessions) {
+                existingSession.setActive(false);
+                existingSession.setCheckOutTime(LocalDateTime.now());
+                existingSession.setNotes((existingSession.getNotes() != null ? existingSession.getNotes() + " | " : "") +
+                        "Auto-closed due to new check-in");
+                sessionRepository.save(existingSession);
+                log.info("Auto-closed existing session {} for user {}", existingSession.getId(), tourist.getEmail());
+            }
+        }
+
         session.setUser(tourist);
         session.setCheckInTime(LocalDateTime.now());
         session.setActive(true);
@@ -69,7 +85,6 @@ public class VisitorService {
                     false
             );
 
-            // Notify admin about successful check-in
             notificationService.createNotification(
                     admin,
                     "Check-in Completed",
@@ -111,7 +126,6 @@ public class VisitorService {
 
         VisitorSession saved = sessionRepository.save(session);
 
-        // Send notification to tourist about check-out
         if (tourist != null) {
             notificationService.createNotification(
                     tourist,
@@ -122,7 +136,6 @@ public class VisitorService {
                     false
             );
 
-            // Notify admin about successful check-out
             notificationService.createNotification(
                     admin,
                     "Check-out Completed",
@@ -139,8 +152,73 @@ public class VisitorService {
         return saved;
     }
 
+    /**
+     * Find the active session for a user.
+     * Returns the most recent active session if multiple exist.
+     */
     public VisitorSession findActiveSession(User user) {
-        return sessionRepository.findByUserAndActiveTrue(user)
+        List<VisitorSession> sessions = sessionRepository.findByUserAndActiveTrue(user);
+
+        if (sessions.isEmpty()) {
+            return null;
+        }
+
+        // Return the most recent active session (latest check-in time)
+        return sessions.stream()
+                .max((s1, s2) -> s1.getCheckInTime().compareTo(s2.getCheckInTime()))
                 .orElse(null);
+    }
+
+    /**
+     * Convert VisitorSession to ActiveSessionResponse DTO
+     * This limits the information exposed to the mobile app
+     */
+    public ActiveSessionResponse convertToActiveSessionResponse(VisitorSession session) {
+        if (session == null) {
+            return null;
+        }
+
+        ActiveSessionResponse response = new ActiveSessionResponse();
+
+        // Session details
+        response.setSessionId(session.getId());
+        response.setCheckInTime(session.getCheckInTime());
+        response.setCheckOutTime(session.getCheckOutTime());
+        response.setActive(session.isActive());
+        response.setGroupSize(session.getGroupSize());
+        response.setVehicleRegistration(session.getVehicleRegistration());
+        response.setSosTriggered(session.isSosTriggered());
+        response.setHasEmergency(session.isHasEmergency());
+        response.setNotes(session.getNotes());
+
+        // Visitor details (limited - no password, no authorities)
+        if (session.getUser() != null) {
+            User user = session.getUser();
+            ActiveSessionResponse.VisitorInfo visitor = new ActiveSessionResponse.VisitorInfo();
+            visitor.setId(user.getId());
+            visitor.setFullName(user.getFullName());
+            visitor.setEmail(user.getEmail());
+            visitor.setPhoneNumber(user.getPhoneNumber());
+            visitor.setEmergencyContactName(user.getEmergencyContactName());
+            visitor.setEmergencyContactPhone(user.getEmergencyContactPhone());
+            response.setVisitor(visitor);
+        }
+
+        // Booking details (limited)
+        if (session.getBooking() != null) {
+            Booking booking = session.getBooking();
+            ActiveSessionResponse.BookingInfo bookingInfo = new ActiveSessionResponse.BookingInfo();
+            bookingInfo.setId(booking.getId());
+            bookingInfo.setBookingReference(booking.getBookingReference());
+            bookingInfo.setCheckInDate(booking.getCheckInDate());
+            bookingInfo.setCheckOutDate(booking.getCheckOutDate());
+            bookingInfo.setPaymentMethod(booking.getPaymentMethod());
+            bookingInfo.setPaymentStatus(booking.getPaymentStatus());
+            bookingInfo.setBookingStatus(booking.getBookingStatus());
+            bookingInfo.setAmount(booking.getAmount());
+            response.setBooking(bookingInfo);
+        }
+
+        return response;
     }
 }

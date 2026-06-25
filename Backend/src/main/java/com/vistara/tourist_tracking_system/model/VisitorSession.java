@@ -1,10 +1,13 @@
 package com.vistara.tourist_tracking_system.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.vistara.tourist_tracking_system.config.GeometrySerializer;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import org.locationtech.jts.geom.Point;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -38,6 +41,7 @@ public class VisitorSession {
     private String vehicleRegistration;
 
     @Column(name = "last_known_location", columnDefinition = "geometry(Point,4326)")
+    @JsonSerialize(using = GeometrySerializer.class)
     private Point lastKnownLocation;
 
     @Column(name = "last_location_update")
