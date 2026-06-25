@@ -35,7 +35,7 @@ export class BookingsComponent implements OnInit {
     return this.currentPage < this.totalPages - 1;
   }
 
-  constructor(private bookingService: BookingService) {}
+  constructor(private bookingService: BookingService) { }
 
   ngOnInit(): void {
     this.fetchBookings();

@@ -52,7 +52,7 @@ export class DashboardHomeComponent implements OnInit, AfterViewInit {
   }
 
   fetchDashboardStats(): void {
-    const url = `${environment.apiUrl}/admin/dashboard/stats`;
+    const url = `${environment.apiUrl}/v1/admin/dashboard/stats`;
 
     this.http.get<any>(url).subscribe({
       next: (res) => {
@@ -192,7 +192,7 @@ export class DashboardHomeComponent implements OnInit, AfterViewInit {
   updateVisitorTrend(): void {
     if (!this.startDate || !this.endDate) return;
 
-    const url = `${environment.apiUrl}/admin/dashboard/visitors?start=${this.startDate}&end=${this.endDate}`;
+    const url = `${environment.apiUrl}/v1/admin/dashboard/visitors?start=${this.startDate}&end=${this.endDate}`;
     this.http.get<any>(url).subscribe({
       next: (res) => {
         if (res?.success && res?.data) {

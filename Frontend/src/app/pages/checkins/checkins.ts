@@ -1,7 +1,9 @@
 // src/app/pages/checkins/checkins.ts
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../core/environments/environment';
 
 @Component({
   selector: 'app-checkins',
@@ -10,45 +12,59 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, FormsModule]
 })
-export class CheckinsComponent {
+export class CheckinsComponent implements OnInit {
   searchQuery = '';
-  zoneFilter = 'All Zones';
   statusFilter = 'All Status';
+  bookings: any[] = [];
+  loading = false;
+  errorMessage = '';
 
-  visitors = [
-    { id: 'VT‑B821', name: 'Julianne Smith', zone: 'North Ridge', entry: '08:15 AM', exit: '04:30 PM', status: 'Checked In' },
-    { id: 'VT‑B834', name: 'Marcus Beard', zone: 'West Lake', entry: '11:30 AM', exit: '—', status: 'Scheduled' },
-    { id: 'VT‑B790', name: 'Knight', zone: 'South Forest', entry: '09:00 AM', exit: '—', status: 'Overstayed' },
-    { id: 'VT‑B840', name: 'David Lopez', zone: 'East Plains', entry: '02:30 PM', exit: '—', status: 'Checked In' },
-    { id: 'VT‑B845', name: 'Sarah Chen', zone: 'North Ridge', entry: '12:30 PM', exit: '—', status: 'Scheduled' }
-  ];
+  constructor(private http: HttpClient) { }
 
-  zones = [
-    { name: 'North Ridge Sector', current: 142, capacity: 200 },
-    { name: 'West Lake Recreational Area', current: 118, capacity: 150 },
-    { name: 'South Forest Sanctuary', current: 67, capacity: 300 }
-  ];
+  ngOnInit(): void {
+    this.fetchBookings();
+  }
+
+  fetchBookings(): void {
+    this.loading = true;
+    this.http.get<any>(`${environment.apiUrl}/v1/admin/bookings`).subscribe({
+      next: (res) => {
+        this.loading = false;
+        if (res?.success && res?.data) {
+          // Only show paid bookings
+          this.bookings = res.data.filter((b: any) => b.paymentStatus === 'PAID');
+        }
+      },
+      error: (err) => {
+        this.loading = false;
+        console.error('CHECKINS ERROR:', err);
+        this.errorMessage = err?.error?.message || 'Failed to load bookings.';
+      }
+    });
+  }
+
+  get filteredBookings() {
+    return this.bookings.filter((b) => {
+      const matchesSearch =
+        b.userFullName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        b.bookingReference.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const matchesStatus =
+        this.statusFilter === 'All Status' || b.bookingStatus === this.statusFilter.toUpperCase();
+      return matchesSearch && matchesStatus;
+    });
+  }
 
   get totalVisitors(): number {
-    return 412;
+    return this.bookings.length;
   }
 
   get scheduledToday(): number {
-    return 185;
+    const today = new Date().toISOString().split('T')[0];
+    return this.bookings.filter((b) => b.checkInDate === today).length;
   }
 
   get expectedCheckouts(): number {
-    return 94;
-  }
-
-  get filteredVisitors() {
-    return this.visitors.filter(v => {
-      const matchesSearch =
-        v.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        v.id.toLowerCase().includes(this.searchQuery.toLowerCase());
-      const matchesZone = this.zoneFilter === 'All Zones' || v.zone === this.zoneFilter;
-      const matchesStatus = this.statusFilter === 'All Status' || v.status === this.statusFilter;
-      return matchesSearch && matchesZone && matchesStatus;
-    });
+    const today = new Date().toISOString().split('T')[0];
+    return this.bookings.filter((b) => b.checkOutDate === today).length;
   }
 }

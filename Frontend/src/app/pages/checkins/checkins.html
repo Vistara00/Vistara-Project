@@ -1,112 +1,98 @@
-<!-- src/app/pages/checkins/checkins.html -->
-<div class="checkins-dashboard">
-  <!-- Header -->
-  <!-- <div class="header">
-    <h2>Check‑ins & Outs</h2>
-    <p>Monitor real‑time visitor movement and park occupancy.</p>
-  </div> -->
+<div class="checkins-container">
+  <!-- Fixed Top Section -->
+  <div class="top-section">
+    <!-- Header
+    <div class="checkins-header">
+      <div>
+        <h2>Check‑ins & Check‑outs</h2>
+        <p>Monitor real‑time visitor movement and park occupancy.</p>
+      </div>
+    </div> -->
 
- <!-- Summary cards -->
-<div class="summary-cards">
-  <div class="summary-card visitors">
-    <div class="icon-circle green">
-      <i class="fas fa-users"></i>
-    </div>
-    <div class="card-content">
-      <p class="label">TOTAL VISITORS IN</p>
-      <h3>{{ totalVisitors }}</h3>
-    </div>
-  </div>
-
-  <div class="summary-card scheduled">
-    <div class="icon-circle gray">
-      <i class="fas fa-calendar-alt"></i>
-    </div>
-    <div class="card-content">
-      <p class="label">SCHEDULED TODAY</p>
-      <h3>{{ scheduledToday }}</h3>
-    </div>
-  </div>
-
-  <div class="summary-card checkouts">
-    <div class="icon-circle red">
-      <i class="fas fa-arrow-right"></i>
-    </div>
-    <div class="card-content">
-      <p class="label">EXPECTED CHECK‑OUTS</p>
-      <h3>{{ expectedCheckouts }}</h3>
-    </div>
-  </div>
-</div>
-
-
-  <!-- Filters -->
-  <div class="filters">
-    <input type="text" placeholder="Search by name or ID..." [(ngModel)]="searchQuery" />
-    <select [(ngModel)]="zoneFilter">
-      <option>All Zones</option>
-      <option *ngFor="let z of zones">{{ z.name.split(' ')[0] }}</option>
-    </select>
-    <select [(ngModel)]="statusFilter">
-      <option>All Status</option>
-      <option>Checked In</option>
-      <option>Scheduled</option>
-      <option>Overstayed</option>
-    </select>
-    <button class="filter-btn"><i class="fas fa-filter"></i></button>
-  </div>
-
-  <!-- Visitor table -->
-  <div class="visitor-table">
-    <table>
-      <thead>
-        <tr>
-          <th>Booking ID</th>
-          <th>Visitor Name</th>
-          <th>Zone</th>
-          <th>Entry Time</th>
-          <th>Expected Exit</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let v of filteredVisitors">
-          <td>#{{ v.id }}</td>
-          <td>{{ v.name }}</td>
-          <td>{{ v.zone }}</td>
-          <td>{{ v.entry }}</td>
-          <td>{{ v.exit }}</td>
-          <td>
-            <span class="status" [ngClass]="v.status.toLowerCase().replace(' ', '-')">{{ v.status }}</span>
-          </td>
-          <td class="actions">
-            <button class="icon-btn" title="View details"><i class="fas fa-eye"></i></button>
-            <button class="icon-btn" title="Edit"><i class="fas fa-edit"></i></button>
-            <button class="icon-btn" title="Check‑out"><i class="fas fa-sign-out-alt"></i></button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Occupancy section -->
-  <div class="occupancy-section">
-    <div class="zone-occupancy">
-      <h4>Live Zone Occupancy</h4>
-      <div class="zone" *ngFor="let z of zones">
-        <span>{{ z.name }}</span>
-        <div class="bar">
-          <div class="fill" [style.width.%]="(z.current / z.capacity) * 100"></div>
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="summary-card visitors">
+        <div class="icon-circle green">
+          <i class="fas fa-users"></i>
         </div>
-        <small>{{ z.current }} / {{ z.capacity }}</small>
+        <div class="card-content">
+          <p class="label">TOTAL VISITORS IN</p>
+          <h3>{{ totalVisitors }}</h3>
+        </div>
+      </div>
+
+      <div class="summary-card scheduled">
+        <div class="icon-circle gray">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="card-content">
+          <p class="label">SCHEDULED TODAY</p>
+          <h3>{{ scheduledToday }}</h3>
+        </div>
+      </div>
+
+      <div class="summary-card checkouts">
+        <div class="icon-circle red">
+          <i class="fas fa-arrow-right"></i>
+        </div>
+        <div class="card-content">
+          <p class="label">EXPECTED CHECK‑OUTS</p>
+          <h3>{{ expectedCheckouts }}</h3>
+        </div>
       </div>
     </div>
 
-    <div class="park-tip">
-      <h4>Park Tip</h4>
-      <p>North Ridge is reaching peak capacity. Consider redirecting new check‑ins to South Forest Sanctuary to maintain balance.</p>
-      <button class="heatmap-btn">View Sector Heatmap</button>
+    <!-- Filters -->
+    <div class="filters">
+      <input type="text" placeholder="Search by name or ID..." [(ngModel)]="searchQuery" />
+      <select [(ngModel)]="statusFilter">
+        <option>All Status</option>
+        <option>Checked In</option>
+        <option>Checked Out</option>
+        <option>Scheduled</option>
+      </select>
+      <button class="filter-btn"><i class="fas fa-filter"></i></button>
+    </div>
+  </div>
+
+  <!-- Scrollable Table Section -->
+  <div class="table-section">
+    <div class="table-wrapper">
+      <table class="checkins-table">
+        <thead>
+          <tr>
+            <th>Booking ID</th>
+            <th>Visitor Name</th>
+            <th>Amount</th>
+            <th>Checked‑in</th>
+            <th>Checked‑out</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="filteredBookings.length === 0">
+            <td colspan="7" class="empty-state">No paid bookings found.</td>
+          </tr>
+          <tr *ngFor="let b of filteredBookings">
+            <td>{{ b.bookingReference }}</td>
+            <td>{{ b.userFullName }}</td>
+            <td>{{ b.amount | currency:'USD':'symbol' }}</td>
+            <td>{{ b.checkInDate | date:'MMM d, y' }}</td>
+            <td>{{ b.checkOutDate | date:'MMM d, y' }}</td>
+            <td>
+              <span class="status" [ngClass]="b.bookingStatus.toLowerCase()">
+                {{ b.bookingStatus }}
+              </span>
+            </td>
+            <td class="actions">
+              <button class="icon-btn" title="Check‑in"><i class="fas fa-sign-in-alt"></i></button>
+              <button class="icon-btn" title="View"><i class="fas fa-eye"></i></button>
+              <button class="icon-btn" title="Check‑out"><i class="fas fa-sign-out-alt"></i></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>

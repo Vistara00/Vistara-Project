@@ -31,7 +31,7 @@ export class BroadcastComponent implements OnInit {
       timestamp: new Date().toISOString()
     };
 
-    const url = `${environment.apiUrl}/v1/broadcast`;
+    const url = `${environment.apiUrl}/v1/admin/broadcast`;
     this.http.post<any>(url, payload).subscribe({
       next: (res) => {
         console.log('Broadcast sent:', res);

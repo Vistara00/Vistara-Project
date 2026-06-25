@@ -1,128 +1,122 @@
 <div class="bookings-container">
-  <!-- Header -->
-  <div class="bookings-header">
-    <div>
-      <h2>Bookings Management</h2>
-      <p>Manage and monitor visitor bookings across all park zones.</p>
-    </div>
-    <button class="new-booking-btn" (click)="openBookingModal()">+ New Booking</button>
-  </div>
-
-  <!-- Modal -->
-  <app-new-booking *ngIf="showModal" (close)="closeBookingModal()"></app-new-booking>
-
-  <!-- Summary cards -->
-  <div class="summary-cards">
-    <div class="summary-card">
-      <div class="icon calendar"><i class="fas fa-calendar-alt"></i></div>
+  <!-- Fixed Top Section -->
+  <div class="top-section">
+    <!-- Header -->
+    <div class="bookings-header">
       <div>
-        <h3>Today's Bookings</h3>
-        <p>{{ totalItems }}</p>
+        <h2>Bookings Management</h2>
+        <p>Manage and monitor visitor bookings across all park zones.</p>
+      </div>
+      <button class="new-booking-btn" (click)="openBookingModal()">+ New Booking</button>
+    </div>
+
+    <!-- Modal -->
+    <app-new-booking *ngIf="showModal" (close)="closeBookingModal()"></app-new-booking>
+
+    <!-- Summary cards -->
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="icon calendar"><i class="fas fa-calendar-alt"></i></div>
+        <div>
+          <h3>Today's Bookings</h3>
+          <p>{{ totalItems }}</p>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="icon pending"><i class="fas fa-hourglass-half"></i></div>
+        <div>
+          <h3>Pending Confirmations</h3>
+          <p>{{ bookings.filter(b => b.status === 'Pending').length }}</p>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="icon revenue"><i class="fas fa-dollar-sign"></i></div>
+        <div>
+          <h3>Total Revenue (MTD)</h3>
+          <p>12,450</p>
+        </div>
       </div>
     </div>
-    <div class="summary-card">
-      <div class="icon pending"><i class="fas fa-hourglass-half"></i></div>
-      <div>
-        <h3>Pending Confirmations</h3>
-        <p>{{ bookings.filter(b => b.status === 'Pending').length }}</p>
-      </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <input type="text" placeholder="Filter by name or ID..." />
+      <select>
+        <option>All Zones</option>
+      </select>
+      <select>
+        <option>All Status</option>
+      </select>
+      <input type="date" />
+      <button class="sort-btn"><i class="fas fa-sort"></i> Sort</button>
     </div>
-    <div class="summary-card">
-      <div class="icon revenue"><i class="fas fa-dollar-sign"></i></div>
-      <div>
-        <h3>Total Revenue (MTD)</h3>
-        <p>$12,450</p>
-      </div>
+  </div>
+
+  <!-- Scrollable Table Section -->
+  <div class="table-section">
+    <!-- Error -->
+    <div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
     </div>
-  </div>
 
-  <!-- Filters -->
-  <div class="filters">
-    <input type="text" placeholder="Filter by name or ID..." />
-    <select>
-      <option>All Zones</option>
-    </select>
-    <select>
-      <option>All Status</option>
-    </select>
-    <input type="date" />
-    <button class="sort-btn"><i class="fas fa-sort"></i> Sort</button>
-  </div>
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-state">
+      Loading bookings...
+    </div>
 
-  <!-- Error -->
-  <div *ngIf="errorMessage" class="error-message">
-    {{ errorMessage }}
-  </div>
+    <!-- Table -->
+    <div class="table-wrapper" *ngIf="!loading">
+      <table class="bookings-table">
+        <thead>
+          <tr>
+            <th>Booking ID</th>
+            <th>Visitor</th>
+            <th>Payment Method</th>
+            <th>Amount</th>
+            <th>Payment Status</th>
+            <th>Check‑in</th>
+            <th>Check‑out</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="bookings.length === 0">
+            <td colspan="7" class="empty-state">No bookings found.</td>
+          </tr>
+          <tr *ngFor="let booking of bookings">
+            <td>{{ booking.id }}</td>
+            <td><strong>{{ booking.visitor_name }}</strong></td>
+            <td>{{ booking.payment_method }}</td>
+            <td>{{ booking.amount | currency:'':'symbol' }}</td>
+            <td>
+              <span class="status" [ngClass]="booking.status?.toLowerCase()">
+                {{ booking.status }}
+              </span>
+            </td>
+            <td>{{ booking.checkin_date | date:'MMM d, y' }}</td>
+            <td>{{ booking.checkout_date | date:'MMM d, y' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="loading-state">
-    Loading bookings...
-  </div>
+    <!-- Results + Pagination -->
+    <div class="table-footer" *ngIf="!loading && bookings.length > 0">
+      <p class="results">
+        Showing {{ currentPage * pageSize + 1 }}–{{ currentPage * pageSize + bookings.length }} of {{ totalItems }}
+        results
+      </p>
 
-  <!-- Table -->
-  <table class="bookings-table" *ngIf="!loading">
-    <thead>
-      <tr>
-        <th>Booking ID</th>
-        <th>Visitor</th>
-        <th>Payment Method</th>
-        <th>Check‑in Date</th>
-        <th>Check‑out Date</th>
-        <th>Payment Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngIf="bookings.length === 0">
-        <td colspan="7" class="empty-state">No bookings found.</td>
-      </tr>
-      <tr *ngFor="let booking of bookings">
-        <td>{{ booking.id }}</td>
-        <td>
-          <div class="visitor-info">
-            <div>
-              <strong>{{ booking.visitor_name }}</strong>
-            </div>
-          </div>
-        </td>
-        <td>{{ booking.payment_method }}</td>
-        <td>{{ booking.checkin_date | date:'MMM d, y' }}</td>
-        <td>{{ booking.checkout_date | date:'MMM d, y' }}</td>
-        <td>
-          <span class="status" [ngClass]="booking.status?.toLowerCase()">
-            {{ booking.status }}
-          </span>
-        </td>
-        <td class="actions">
-          <button class="icon-btn" title="Check‑in visitor"
-                  [disabled]="booking.status !== 'Scheduled'">
-            <i class="fas fa-sign-in-alt"></i> Check‑in
-          </button>
-          <button class="icon-btn" title="Check‑out visitor"
-                  [disabled]="booking.status !== 'Checkedin'">
-            <i class="fas fa-sign-out-alt"></i> Check‑out
-          </button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+      <div class="pagination" *ngIf="totalItems > pageSize">
+        <button class="page-btn" (click)="prevPage()" [disabled]="!hasPrev">
+          <i class="fas fa-chevron-left"></i> Prev
+        </button>
 
-  <!-- Results + Pagination -->
-  <div class="table-footer" *ngIf="!loading && bookings.length > 0">
-    <p class="results">
-      Showing {{ currentPage * pageSize + 1 }}–{{ currentPage * pageSize + bookings.length }} of {{ totalItems }} results
-    </p>
+        <span class="page-info">Page {{ currentPage + 1 }} of {{ totalPages }}</span>
 
-    <div class="pagination" *ngIf="totalItems > pageSize">
-      <button class="page-btn" (click)="prevPage()" [disabled]="!hasPrev">
-        <i class="fas fa-chevron-left"></i> Prev
-      </button>
-
-      <span class="page-info">Page {{ currentPage + 1 }} of {{ totalPages }}</span>
-
-      <button class="page-btn" (click)="nextPage()" [disabled]="!hasNext">
-        Next <i class="fas fa-chevron-right"></i>
-      </button>
+        <button class="page-btn" (click)="nextPage()" [disabled]="!hasNext">
+          Next <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
     </div>
   </div>
 </div>
