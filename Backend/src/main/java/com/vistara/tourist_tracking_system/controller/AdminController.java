@@ -4,10 +4,12 @@ import com.vistara.tourist_tracking_system.dto.*;
 import com.vistara.tourist_tracking_system.exception.DuplicateResourceException;
 import com.vistara.tourist_tracking_system.model.Booking;
 import com.vistara.tourist_tracking_system.model.EmergencyAlert;
+import com.vistara.tourist_tracking_system.model.LocationTracking;
 import com.vistara.tourist_tracking_system.model.Notification;
 import com.vistara.tourist_tracking_system.model.User;
 import com.vistara.tourist_tracking_system.model.VisitorSession;
 import com.vistara.tourist_tracking_system.repository.EmergencyAlertRepository;
+import com.vistara.tourist_tracking_system.repository.LocationTrackingRepository;
 import com.vistara.tourist_tracking_system.repository.UserRepository;
 import com.vistara.tourist_tracking_system.repository.VisitorSessionRepository;
 import com.vistara.tourist_tracking_system.service.*;
@@ -19,7 +21,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,12 +35,14 @@ public class AdminController {
     private final VisitorSessionRepository sessionRepository;
     private final EmergencyAlertRepository alertRepository;
     private final UserRepository userRepository;
+    private final LocationTrackingRepository locationTrackingRepository;  // ADDED
     private final EmergencyService emergencyService;
     private final VisitorService visitorService;
     private final BookingService bookingService;
     private final UserService userService;
     private final DashboardService dashboardService;
-    private final NotificationService notificationService;  // ADDED
+    private final NotificationService notificationService;
+    private final TrackingService trackingService;  // ADDED
 
     // ========== USER MANAGEMENT ==========
 
@@ -65,6 +72,110 @@ public class AdminController {
     public ResponseEntity<ApiResponse<DashboardStats>> getDashboardStats() {
         DashboardStats stats = dashboardService.getDashboardStats();
         return ResponseEntity.ok(ApiResponse.success(stats, "Dashboard stats retrieved"));
+    }
+
+    // ========== VISITOR TRACKING ==========
+
+    /**
+     * Get all active visitors with their last known locations
+     */
+    @GetMapping("/visitors-locations")
+    public ResponseEntity<ApiResponse<List<LocationTracking>>> getAllActiveVisitorsLocations() {
+        // Get locations from the last 5 minutes for active sessions
+        List<LocationTracking> locations = locationTrackingRepository.findRecentLocations(
+                LocalDateTime.now().minusMinutes(5)
+        );
+        return ResponseEntity.ok(ApiResponse.success(locations, "Active visitors locations retrieved"));
+    }
+
+    /**
+     * Get tracking history for a specific visitor session
+     */
+    @GetMapping("/visitor-tracking/{sessionId}")
+    public ResponseEntity<ApiResponse<List<LocationTracking>>> getVisitorTrackingHistory(
+            @PathVariable Long sessionId,
+            @RequestParam(required = false) LocalDateTime from,
+            @RequestParam(required = false) LocalDateTime to) {
+
+        // Default to last 24 hours if dates not provided
+        if (from == null) {
+            from = LocalDateTime.now().minusHours(24);
+        }
+        if (to == null) {
+            to = LocalDateTime.now();
+        }
+
+        List<LocationTracking> locations = trackingService.getLocationHistory(sessionId, from, to);
+        return ResponseEntity.ok(ApiResponse.success(locations, "Visitor tracking history retrieved"));
+    }
+
+    /**
+     * Get the last known location for a specific visitor
+     */
+    @GetMapping("/visitor-location/{sessionId}")
+    public ResponseEntity<ApiResponse<LocationTracking>> getVisitorLastLocation(
+            @PathVariable Long sessionId) {
+        LocationTracking location = trackingService.getLastLocation(sessionId);
+        return ResponseEntity.ok(ApiResponse.success(location, "Last location retrieved"));
+    }
+
+    /**
+     * Get live tracking for all active visitors (with additional details)
+     */
+    @GetMapping("/live-tracking")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getLiveTracking() {
+        List<Object[]> results = locationTrackingRepository.findLiveTrackingData();
+
+        List<Map<String, Object>> trackingData = results.stream()
+                .map(row -> {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("sessionId", row[0]);
+                    data.put("visitorName", row[1]);
+                    data.put("visitorEmail", row[2]);
+                    data.put("latitude", row[3]);
+                    data.put("longitude", row[4]);
+                    data.put("lastUpdate", row[5]);
+                    data.put("groupSize", row[6]);
+                    data.put("vehicleRegistration", row[7]);
+                    data.put("sosTriggered", row[8]);
+                    return data;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(ApiResponse.success(trackingData, "Live tracking data retrieved"));
+    }
+
+    /**
+     * Get tracking for a specific visitor with additional details
+     */
+    @GetMapping("/visitor-tracking-details/{sessionId}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getVisitorTrackingDetails(
+            @PathVariable Long sessionId) {
+
+        Map<String, Object> details = new HashMap<>();
+
+        // Get session details
+        VisitorSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        // Get last location
+        LocationTracking lastLocation = locationTrackingRepository.findTopBySessionOrderByTimestampDesc(session);
+
+        // Get location history (last 24 hours)
+        List<LocationTracking> history = trackingService.getLocationHistory(
+                sessionId,
+                LocalDateTime.now().minusHours(24),
+                LocalDateTime.now()
+        );
+
+        details.put("session", session);
+        details.put("visitor", session.getUser());
+        details.put("lastLocation", lastLocation);
+        details.put("locationHistory", history);
+        details.put("totalLocations", history.size());
+        details.put("booking", session.getBooking());
+
+        return ResponseEntity.ok(ApiResponse.success(details, "Visitor tracking details retrieved"));
     }
 
     // ========== EMERGENCY MANAGEMENT ==========
@@ -119,7 +230,6 @@ public class AdminController {
             @AuthenticationPrincipal UserDetails adminDetails,
             @Valid @RequestBody CashBookingRequest request) {
 
-        // Find existing user or create a new one
         User tourist = userService.findOrCreateTourist(
                 request.getFullName(),
                 request.getEmail(),
@@ -183,14 +293,12 @@ public class AdminController {
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails adminDetails,
             @Valid @RequestBody AdminMpesaBookingRequest request) {
 
-        // Find existing user or create a new one
         User tourist = userService.findOrCreateTourist(
                 request.getFullName(),
                 request.getEmail(),
                 request.getPhoneNumber()
         );
 
-        // Create booking and initiate M-Pesa payment
         Booking booking = bookingService.createBookingWithMpesa(tourist, request);
 
         BookingResponse response = convertToResponse(booking);
@@ -210,7 +318,6 @@ public class AdminController {
         List<Notification> notifications;
 
         if (request.getUserId() != null && request.getUserId() > 0) {
-            // Broadcast to specific user
             Notification notification = notificationService.broadcastToUser(
                     request.getUserId(),
                     request.getTitle(),
@@ -218,7 +325,6 @@ public class AdminController {
             );
             notifications = List.of(notification);
         } else {
-            // Broadcast to all users
             notifications = notificationService.broadcastToAllUsers(
                     request.getTitle(),
                     request.getMessage()

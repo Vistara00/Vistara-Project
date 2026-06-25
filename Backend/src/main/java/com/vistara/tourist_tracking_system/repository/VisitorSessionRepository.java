@@ -17,23 +17,26 @@ public interface VisitorSessionRepository extends JpaRepository<VisitorSession, 
     // Active sessions (list)
     List<VisitorSession> findByActiveTrue();
 
-    // Count of active sessions (for dashboard)
+    // Count of active sessions
     long countByActiveTrue();
+
+    // Find active sessions for a specific user (returns list)
+    List<VisitorSession> findByUserAndActiveTrue(User user);
+
+    // Find latest active session for a user (returns single result)
+    @Query("SELECT vs FROM VisitorSession vs WHERE vs.user = :user AND vs.active = true ORDER BY vs.checkInTime DESC")
+    Optional<VisitorSession> findLatestActiveSessionByUser(@Param("user") User user);
 
     // Sessions checked-in after a given time
     List<VisitorSession> findByCheckInTimeAfter(LocalDateTime since);
 
-    // === Dashboard-specific queries (native PostgreSQL) ===
-
-    // Total check-ins today
+    // Daily attendance queries
     @Query("SELECT COUNT(vs) FROM VisitorSession vs WHERE vs.checkInTime >= :startOfDay")
     long countCheckInsToday(@Param("startOfDay") LocalDateTime startOfDay);
 
-    // Total check-outs today
     @Query("SELECT COUNT(vs) FROM VisitorSession vs WHERE vs.checkOutTime >= :startOfDay")
     long countCheckOutsToday(@Param("startOfDay") LocalDateTime startOfDay);
 
-    // Daily attendance (native – uses DATE())
     @Query(value = "SELECT DATE(vs.check_in_time) as date, COUNT(vs.id) as count " +
             "FROM visitor_sessions vs " +
             "WHERE vs.check_in_time >= :startDate " +
@@ -41,7 +44,6 @@ public interface VisitorSessionRepository extends JpaRepository<VisitorSession, 
             "ORDER BY DATE(vs.check_in_time)", nativeQuery = true)
     List<Object[]> findDailyAttendance(@Param("startDate") LocalDateTime startDate);
 
-    // Weekly attendance (native – uses EXTRACT(WEEK FROM ...))
     @Query(value = "SELECT EXTRACT(WEEK FROM vs.check_in_time) as week, COUNT(vs.id) as count " +
             "FROM visitor_sessions vs " +
             "WHERE vs.check_in_time >= :startDate " +
@@ -49,11 +51,7 @@ public interface VisitorSessionRepository extends JpaRepository<VisitorSession, 
             "ORDER BY EXTRACT(WEEK FROM vs.check_in_time)", nativeQuery = true)
     List<Object[]> findWeeklyAttendance(@Param("startDate") LocalDateTime startDate);
 
-    // Optional: find sessions with check-out time null (still inside)
     List<VisitorSession> findByActiveTrueAndCheckOutTimeIsNull();
 
-    // Optional: find sessions by user and active status
     List<VisitorSession> findByUserIdAndActiveTrue(Long userId);
-
-    Optional<VisitorSession> findByUserAndActiveTrue(User user);
 }

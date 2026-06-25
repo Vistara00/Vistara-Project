@@ -36,4 +36,14 @@ public interface LocationTrackingRepository extends JpaRepository<LocationTracki
             @Param("maxLat") double maxLat,
             @Param("maxLon") double maxLon
     );
+
+    @Query(value = "SELECT vs.id, u.full_name, u.email, lt.latitude, lt.longitude, lt.timestamp, " +
+            "vs.group_size, vs.vehicle_registration, vs.sos_triggered " +
+            "FROM visitor_sessions vs " +
+            "JOIN users u ON vs.user_id = u.id " +
+            "LEFT JOIN location_tracking lt ON lt.session_id = vs.id " +
+            "WHERE vs.is_active = true " +
+            "AND lt.timestamp IN (SELECT MAX(timestamp) FROM location_tracking WHERE session_id = vs.id) " +
+            "ORDER BY lt.timestamp DESC", nativeQuery = true)
+    List<Object[]> findLiveTrackingData();
 }
