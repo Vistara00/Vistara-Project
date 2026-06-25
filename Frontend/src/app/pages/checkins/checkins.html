@@ -1,13 +1,13 @@
 <div class="checkins-container">
   <!-- Fixed Top Section -->
   <div class="top-section">
-    <!-- Header
+    <!-- Header -->
     <div class="checkins-header">
       <div>
         <h2>Check‑ins & Check‑outs</h2>
         <p>Monitor real‑time visitor movement and park occupancy.</p>
       </div>
-    </div> -->
+    </div>
 
     <!-- Summary Cards -->
     <div class="summary-cards">
@@ -86,13 +86,25 @@
               </span>
             </td>
             <td class="actions">
-              <button class="icon-btn" title="Check‑in"><i class="fas fa-sign-in-alt"></i></button>
-              <button class="icon-btn" title="View"><i class="fas fa-eye"></i></button>
-              <button class="icon-btn" title="Check‑out"><i class="fas fa-sign-out-alt"></i></button>
+              <!-- Action buttons wired to TS methods -->
+              <button class="icon-btn" title="Check‑in" (click)="onPopupCheckin()">
+                <i class="fas fa-sign-in-alt"></i>
+              </button>
+              <button class="icon-btn" title="View" (click)="onView(b)">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="icon-btn" title="Check‑out" (click)="onPopupCheckout()">
+                <i class="fas fa-sign-out-alt"></i>
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
+
+  <!-- Popup Component -->
+  <app-checkin-popup [booking]="selectedBooking" [show]="showPopup" (close)="closePopup()" (checkin)="onPopupCheckin()"
+    (checkout)="onPopupCheckout()">
+  </app-checkin-popup>
 </div>

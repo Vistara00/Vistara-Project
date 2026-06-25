@@ -1,7 +1,7 @@
 {
   "/api": {
-    "target": "https://undrafted-erasable-crevice.ngrok-free.dev",
-    "secure": true,
+    "target": "http://localhost:8087",
+    "secure": false,
     "changeOrigin": true,
     "headers": {
       "ngrok-skip-browser-warning": "true"
