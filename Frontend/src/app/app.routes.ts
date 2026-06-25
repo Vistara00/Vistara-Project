@@ -65,11 +65,17 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/settings/settings').then(m => m.SettingsComponent)
       },
-      // New Profile route
+      // Profile route
       {
         path: 'profile',
         loadComponent: () =>
           import('./pages/profile/profile').then(m => m.ProfileComponent)
+      },
+      // New Broadcast route
+      {
+        path: 'broadcast',
+        loadComponent: () =>
+          import('./pages/broadcast/broadcast').then(m => m.BroadcastComponent)
       }
     ]
   }

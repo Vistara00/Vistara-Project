@@ -1,0 +1,68 @@
+<div class="broadcast-page">
+    <!-- Compose Broadcast -->
+    <div class="compose-section">
+        <div class="compose-header">
+            <h3><i class="fa fa-paper-plane"></i> Compose Broadcast</h3>
+            <span class="char-count">Characters: {{ broadcastMessage.length }}/240</span>
+        </div>
+
+        <form (ngSubmit)="sendBroadcast()" #broadcastForm="ngForm" class="broadcast-form">
+            <div class="form-group">
+                <label for="title">Broadcast Title</label>
+                <input type="text" id="title" name="title" [(ngModel)]="broadcastTitle"
+                    placeholder="e.g., Weather Warning: North Sector" maxlength="100" required />
+            </div>
+
+            <div class="form-group">
+                <label for="message">Message Content</label>
+                <textarea id="message" name="message" [(ngModel)]="broadcastMessage"
+                    placeholder="Type your message here. Be clear and concise..." maxlength="240" rows="4"
+                    required></textarea>
+            </div>
+
+            <button type="submit" class="send-btn">
+                <i class="fa fa-paper-plane"></i> Send Broadcast
+            </button>
+        </form>
+    </div>
+
+
+    <!-- Broadcast History -->
+    <div class="history-section">
+        <h3><i class="fa fa-history"></i> Broadcast History</h3>
+
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Date / Time</th>
+                    <th>Broadcast Title</th>
+                    <th>Message</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr *ngFor="let item of broadcasts">
+                    <td>{{ item.timestamp | date: 'MMM d, y, h:mm a' }}</td>
+                    <td>{{ item.title }}</td>
+                    <td class="message-cell">{{ item.message }}</td>
+                    <td>
+                        <span class="status delivered" *ngIf="item.status === 'Delivered'">
+                            <i class="fa fa-check-circle"></i> Delivered
+                        </span>
+                        <span class="status pending" *ngIf="item.status === 'Pending'">
+                            <i class="fa fa-clock"></i> Pending
+                        </span>
+                    </td>
+                    <td>
+                        <button class="action-btn">
+                            <i class="fa fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+</div>
