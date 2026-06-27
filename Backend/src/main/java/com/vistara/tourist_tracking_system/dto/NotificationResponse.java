@@ -1,5 +1,6 @@
 package com.vistara.tourist_tracking_system.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -10,7 +11,11 @@ public class NotificationResponse {
     private String message;
     private String type;
     private boolean read;
-    private boolean broadcast;
-    private Long referenceId;
     private LocalDateTime createdAt;
+
+    @JsonIgnore  // ← Hides from JSON response
+    private boolean broadcast;
+
+    @JsonIgnore  // ← Hides from JSON response
+    private Long referenceId;
 }

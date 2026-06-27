@@ -1,6 +1,7 @@
 package com.vistara.tourist_tracking_system.service;
 
 import com.vistara.tourist_tracking_system.dto.ActiveSessionResponse;
+import com.vistara.tourist_tracking_system.dto.VisitorSessionResponse;
 import com.vistara.tourist_tracking_system.model.Booking;
 import com.vistara.tourist_tracking_system.model.User;
 import com.vistara.tourist_tracking_system.model.VisitorSession;
@@ -33,8 +34,10 @@ public class VisitorService {
         if (bookingId != null && bookingId > 0) {
             Booking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new RuntimeException("Booking not found"));
-            if (!Booking.BookingStatus.CONFIRMED.equals(booking.getBookingStatus())) {
-                throw new RuntimeException("Booking is not confirmed (payment may be pending)");
+            // Optional: Keep this as a safety net, but controller already validates
+            if (!Booking.BookingStatus.CONFIRMED.equals(booking.getBookingStatus()) ||
+                    !Booking.PaymentStatus.PAID.equals(booking.getPaymentStatus())) {
+                throw new RuntimeException("Booking is not confirmed or payment not completed");
             }
             tourist = booking.getUser();
             session.setBooking(booking);
@@ -56,7 +59,6 @@ public class VisitorService {
         // Check if user already has an active session
         List<VisitorSession> existingActiveSessions = sessionRepository.findByUserAndActiveTrue(tourist);
         if (!existingActiveSessions.isEmpty()) {
-            // Close existing active sessions before creating a new one
             for (VisitorSession existingSession : existingActiveSessions) {
                 existingSession.setActive(false);
                 existingSession.setCheckOutTime(LocalDateTime.now());
@@ -217,6 +219,32 @@ public class VisitorService {
             bookingInfo.setBookingStatus(booking.getBookingStatus());
             bookingInfo.setAmount(booking.getAmount());
             response.setBooking(bookingInfo);
+        }
+
+        return response;
+    }
+
+    public VisitorSessionResponse convertToSessionResponse(VisitorSession session) {
+        VisitorSessionResponse response = new VisitorSessionResponse();
+        response.setSessionId(session.getId());
+        response.setUserId(session.getUser().getId());
+        response.setVisitorName(session.getUser().getFullName());
+        response.setVisitorEmail(session.getUser().getEmail());
+        response.setVisitorPhone(session.getUser().getPhoneNumber());
+        response.setCheckInTime(session.getCheckInTime());
+        response.setCheckOutTime(session.getCheckOutTime());
+        response.setActive(session.isActive());
+        response.setGroupSize(session.getGroupSize());
+        response.setVehicleRegistration(session.getVehicleRegistration());
+        response.setSosTriggered(session.isSosTriggered());
+        response.setHasEmergency(session.isHasEmergency());
+        response.setNotes(session.getNotes());
+
+        if (session.getBooking() != null) {
+            response.setBookingId(session.getBooking().getId());
+            response.setBookingReference(session.getBooking().getBookingReference());
+            response.setBookingStatus(session.getBooking().getBookingStatus());
+            response.setPaymentStatus(session.getBooking().getPaymentStatus());
         }
 
         return response;

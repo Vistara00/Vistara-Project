@@ -1,10 +1,12 @@
 package com.vistara.tourist_tracking_system.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vistara.tourist_tracking_system.dto.MpesaCallbackPayload;
 import com.vistara.tourist_tracking_system.model.Booking;
-import com.vistara.tourist_tracking_system.repository.BookingRepository;
+import com.vistara.tourist_tracking_system.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,51 +22,88 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MpesaCallbackController {
 
-    private final BookingRepository bookingRepository;
+    private final BookingService bookingService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostMapping("/stk-callback")
-    public ResponseEntity<Map<String, String>> stkCallback(@RequestBody MpesaCallbackPayload payload) {
-        log.info("M-Pesa callback received: {}", payload);
+    public ResponseEntity<Map<String, String>> stkCallback(@RequestBody String callbackJson) {
+        log.info("======= M-PESA CALLBACK RECEIVED =======");
+        log.info("Raw callback: {}", callbackJson);
+
+        Map<String, String> response = new HashMap<>();
 
         try {
+            // Parse the callback payload
+            MpesaCallbackPayload payload = objectMapper.readValue(callbackJson, MpesaCallbackPayload.class);
+
+            if (payload.getBody() == null || payload.getBody().getStkCallback() == null) {
+                log.error("Invalid callback payload structure");
+                response.put("ResultCode", "1");
+                response.put("ResultDesc", "Invalid payload");
+                return ResponseEntity.badRequest().body(response);
+            }
+
             MpesaCallbackPayload.StkCallback stkCallback = payload.getBody().getStkCallback();
+
             String checkoutRequestId = stkCallback.getCheckoutRequestId();
             Integer resultCode = stkCallback.getResultCode();
 
-            // Find the booking using the stored CheckoutRequestID
-            Booking booking = bookingRepository.findByPaymentTrackingId(checkoutRequestId)
-                    .orElseThrow(() -> new RuntimeException("No booking found for CheckoutRequestID: " + checkoutRequestId));
+            log.info("CheckoutRequestID: {}, ResultCode: {}", checkoutRequestId, resultCode);
+
+            if (checkoutRequestId == null || checkoutRequestId.isEmpty()) {
+                log.error("CheckoutRequestID is null or empty");
+                response.put("ResultCode", "1");
+                response.put("ResultDesc", "Missing CheckoutRequestID");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Check if booking exists with this tracking ID
+            Booking booking = bookingService.findByPaymentTrackingId(checkoutRequestId);
+
+            if (booking == null) {
+                log.warn("No booking found for CheckoutRequestID: {}. It may have been created manually or the tracking ID wasn't stored.",
+                        checkoutRequestId);
+                // Still return success to M-Pesa to avoid retries
+                response.put("ResultCode", "0");
+                response.put("ResultDesc", "Success");
+                return ResponseEntity.ok(response);
+            }
+
+            log.info("Found booking: ID={}, Reference={}, Current Status={}",
+                    booking.getId(), booking.getBookingReference(), booking.getPaymentStatus());
 
             if (resultCode == 0) {
-                // Payment successful
+                // Payment successful - extract receipt number
                 String receiptNo = null;
-                if (stkCallback.getCallbackMetadata() != null) {
+                if (stkCallback.getCallbackMetadata() != null && stkCallback.getCallbackMetadata().getItem() != null) {
                     for (MpesaCallbackPayload.Item item : stkCallback.getCallbackMetadata().getItem()) {
-                        if ("MpesaReceiptNumber".equals(item.getName())) {
-                            receiptNo = item.getValue().toString();
+                        String itemName = item.getName();
+                        if ("MpesaReceiptNumber".equals(itemName)) {
+                            receiptNo = item.getValue() != null ? item.getValue().toString() : null;
                             break;
                         }
                     }
                 }
-                booking.setPaymentStatus(Booking.PaymentStatus.PAID);
-                booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
-                booking.setPaymentReference(receiptNo);
-                bookingRepository.save(booking);
-                log.info("Booking {} payment confirmed", booking.getId());
+
+                bookingService.updatePaymentStatus(checkoutRequestId, receiptNo, "PAID");
+                log.info("✅ Booking {} updated to PAID. Receipt: {}", booking.getId(), receiptNo);
             } else {
                 // Payment failed
-                booking.setPaymentStatus(Booking.PaymentStatus.FAILED);
-                bookingRepository.save(booking);
-                log.warn("Payment failed for booking {}: {}", booking.getId(), stkCallback.getResultDesc());
+                bookingService.updatePaymentStatus(checkoutRequestId, null, "FAILED");
+                log.warn("❌ Payment failed for booking {}: {}", booking.getId(), stkCallback.getResultDesc());
             }
+
+            response.put("ResultCode", "0");
+            response.put("ResultDesc", "Success");
+
         } catch (Exception e) {
-            log.error("Error processing M-Pesa callback", e);
+            log.error("Error processing M-Pesa callback: ", e);
+            response.put("ResultCode", "1");
+            response.put("ResultDesc", "Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
 
-        // Always return success response to M-Pesa
-        Map<String, String> response = new HashMap<>();
-        response.put("ResultCode", "0");
-        response.put("ResultDesc", "Success");
+        log.info("======= M-PESA CALLBACK PROCESSED =======");
         return ResponseEntity.ok(response);
     }
 }

@@ -37,6 +37,7 @@ public interface LocationTrackingRepository extends JpaRepository<LocationTracki
             @Param("maxLon") double maxLon
     );
 
+    // Live tracking data for all active visitors
     @Query(value = "SELECT vs.id, u.full_name, u.email, lt.latitude, lt.longitude, lt.timestamp, " +
             "vs.group_size, vs.vehicle_registration, vs.sos_triggered " +
             "FROM visitor_sessions vs " +

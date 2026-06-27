@@ -17,7 +17,7 @@ public interface VisitorSessionRepository extends JpaRepository<VisitorSession, 
     // Active sessions (list)
     List<VisitorSession> findByActiveTrue();
 
-    // Count of active sessions
+    // Count of active sessions (for dashboard)
     long countByActiveTrue();
 
     // Find active sessions for a specific user (returns list)

@@ -1,5 +1,5 @@
 -- =====================================================
--- V15: Add booking and payment columns to visitor_sessions
+-- V16: Add booking and payment columns to visitor_sessions
 -- =====================================================
 
 -- Add booking_id column

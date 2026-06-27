@@ -26,7 +26,7 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final MpesaService mpesaService;
-    private final NotificationService notificationService;  // Inject NotificationService
+    private final NotificationService notificationService;
 
     @Transactional
     public Booking createBooking(User tourist, BookingRequest request) {
@@ -51,7 +51,6 @@ public class BookingService {
 
         Booking saved = bookingRepository.save(booking);
 
-        // Send notification to tourist about booking creation
         notificationService.createNotification(
                 tourist,
                 "Booking Created",
@@ -61,7 +60,6 @@ public class BookingService {
                 false
         );
 
-        // Notify admin about new booking
         notificationService.createNotificationByEmail(
                 "admin@vistara.com",
                 "New Booking Created",
@@ -86,36 +84,21 @@ public class BookingService {
     public void confirmPayment(Long bookingId, String paymentReference, String paymentStatus) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
-        booking.setPaymentReference(paymentReference);
-        booking.setPaymentStatus(paymentStatus);
 
-        if (Booking.PaymentStatus.PAID.equals(paymentStatus)) {
-            booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
-
-            // Notify tourist about successful payment
-            notificationService.createNotification(
-                    booking.getUser(),
-                    "Payment Confirmed",
-                    "Your payment for booking " + booking.getBookingReference() + " has been confirmed.",
-                    "PAYMENT",
-                    bookingId,
-                    false
-            );
-
-            // Notify admin about successful payment
-            notificationService.createNotificationByEmail(
-                    "admin@vistara.com",
-                    "Payment Confirmed",
-                    "Booking " + booking.getBookingReference() + " has been paid.",
-                    "PAYMENT",
-                    bookingId,
-                    false
-            );
-
-            log.info("Payment confirmed for booking: {}", booking.getBookingReference());
+        if ("PAID".equals(booking.getPaymentStatus())) {
+            throw new RuntimeException("Booking is already PAID");
+        }
+        if ("CONFIRMED".equals(booking.getBookingStatus())) {
+            throw new RuntimeException("Booking is already CONFIRMED");
         }
 
+        booking.setPaymentReference(paymentReference);
+        booking.setPaymentStatus(paymentStatus);
+        if (Booking.PaymentStatus.PAID.equals(paymentStatus)) {
+            booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
+        }
         bookingRepository.save(booking);
+        log.info("Payment confirmed for booking {} with reference {}", bookingId, paymentReference);
     }
 
     @Transactional
@@ -128,7 +111,6 @@ public class BookingService {
         booking.setBookingStatus(Booking.BookingStatus.CANCELLED);
         bookingRepository.save(booking);
 
-        // Notify tourist about cancellation
         notificationService.createNotification(
                 booking.getUser(),
                 "Booking Cancelled",
@@ -178,7 +160,6 @@ public class BookingService {
 
         Booking saved = bookingRepository.save(booking);
 
-        // Notify user about confirmed booking (cash booking)
         notificationService.createNotification(
                 user,
                 "Booking Confirmed",
@@ -216,7 +197,6 @@ public class BookingService {
 
         Booking saved = bookingRepository.save(booking);
 
-        // Notify tourist about booking creation
         notificationService.createNotification(
                 tourist,
                 "Booking Created (M-Pesa)",
@@ -226,7 +206,6 @@ public class BookingService {
                 false
         );
 
-        // Initiate M-Pesa STK Push
         try {
             MpesaStkRequest mpesaRequest = new MpesaStkRequest();
             mpesaRequest.setPhoneNumber(request.getPhoneNumber());
@@ -245,6 +224,56 @@ public class BookingService {
         }
 
         return saved;
+    }
+
+    public Booking getBookingById(Long bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
+    }
+
+    public Booking getBookingByIdAndUser(Long bookingId, User user) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
+
+        if (!booking.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("You are not authorized to view this booking");
+        }
+
+        return booking;
+    }
+
+    public Booking findByBookingReference(String bookingReference) {
+        return bookingRepository.findByBookingReference(bookingReference)
+                .orElse(null);
+    }
+
+    public Booking findByPaymentTrackingId(String paymentTrackingId) {
+        return bookingRepository.findByPaymentTrackingId(paymentTrackingId)
+                .orElse(null);
+    }
+
+    @Transactional
+    public void updatePaymentStatus(String checkoutRequestId, String paymentReference, String paymentStatus) {
+        Booking booking = bookingRepository.findByPaymentTrackingId(checkoutRequestId)
+                .orElseThrow(() -> new RuntimeException("Booking not found for CheckoutRequestID: " + checkoutRequestId));
+
+        booking.setPaymentReference(paymentReference);
+        booking.setPaymentStatus(paymentStatus);
+        if ("PAID".equals(paymentStatus)) {
+            booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
+        }
+        bookingRepository.save(booking);
+
+        log.info("Booking {} updated to status: {}", booking.getId(), paymentStatus);
+    }
+
+    @Transactional
+    public void updatePaymentTrackingId(Long bookingId, String trackingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+        booking.setPaymentTrackingId(trackingId);
+        bookingRepository.save(booking);
+        log.info("Updated payment tracking ID for booking {}: {}", bookingId, trackingId);
     }
 
     public List<Booking> getBookingsByUser(User user) {

@@ -1,9 +1,12 @@
 package com.vistara.tourist_tracking_system.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import org.locationtech.jts.geom.Point;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -25,7 +28,6 @@ public class EmergencyAlert {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // Columns are now VARCHAR(50) after V9 migration — plain @Enumerated works
     @Enumerated(EnumType.STRING)
     @Column(name = "alert_type", nullable = false)
     private AlertType alertType;
@@ -43,6 +45,10 @@ public class EmergencyAlert {
 
     @Column(name = "longitude", nullable = false)
     private Double longitude;
+
+    @Column(name = "location_point", columnDefinition = "geometry(Point,4326)", insertable = false, updatable = false)
+    @JsonIgnore
+    private Point locationPoint;
 
     @Column(name = "message", length = 500)
     private String message;
@@ -74,7 +80,7 @@ public class EmergencyAlert {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         if (alertStatus == null) alertStatus = AlertStatus.PENDING;
-        if (priority == null)    priority    = AlertPriority.HIGH;
+        if (priority == null) priority = AlertPriority.HIGH;
     }
 
     @PreUpdate
