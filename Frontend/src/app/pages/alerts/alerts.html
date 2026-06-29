@@ -1,96 +1,323 @@
 <!-- src/app/pages/alerts/alerts.html -->
-<div class="alerts-dashboard">
-  <!-- Header -->
-  <div class="header">
-    <h2>SOS Alerts</h2>
-    <p>Monitor and respond to emergency alerts in real time.</p>
-  </div>
 
-  <!-- Summary cards -->
-  <div class="summary-cards">
-    <div class="summary-card active">
-      <div class="icon-circle red">
-        <i class="fas fa-exclamation-triangle"></i>
+<div class="alerts-page">
+
+  <!-- ── Stats Row ─────────────────────────────────────────────────────────── -->
+  <div class="stats-grid">
+
+    <!-- Active Alerts -->
+    <div class="stat-card stat-card--active">
+      <div class="stat-card__left">
+        <span class="stat-card__label">Active Alerts</span>
+        <span class="stat-card__value">{{ activeCount }}</span>
+        <span class="stat-card__sub stat-card__sub--up">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M6 2L10 7H2L6 2Z" fill="currentColor" />
+          </svg>
+          +{{ pendingCount }} from last hour
+        </span>
       </div>
-      <div class="card-content">
-        <p class="label">ACTIVE ALERTS</p>
-        <h3>{{ activeAlerts }}</h3>
+      <div class="stat-card__icon stat-card__icon--active">
+        <!-- siren / alert icon -->
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18.364 5.636a9 9 0 1 1-12.728 0" />
+          <path d="M12 2v4" />
+          <circle cx="12" cy="13" r="2" fill="currentColor" stroke="none" />
+          <path d="M12 15v3" />
+        </svg>
       </div>
     </div>
 
-    <div class="summary-card pending">
-      <div class="icon-circle orange">
-        <i class="fas fa-hourglass-half"></i>
+    <!-- Pending Alerts -->
+    <div class="stat-card stat-card--pending">
+      <div class="stat-card__left">
+        <span class="stat-card__label">Pending Alerts</span>
+        <span class="stat-card__value">{{ pendingCount }}</span>
+        <span class="stat-card__sub stat-card__sub--avg">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2" />
+            <path d="M6 3.5v2.8l1.8 1.8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          </svg>
+          Avg response: {{ stats.avgResponseTime }}
+        </span>
       </div>
-      <div class="card-content">
-        <p class="label">PENDING ALERTS</p>
-        <h3>{{ pendingAlerts }}</h3>
+      <div class="stat-card__icon stat-card__icon--pending">
+        <!-- clipboard / pending icon -->
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="8" y="2" width="8" height="4" rx="1" />
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <path d="M9 12h6M9 16h4" />
+        </svg>
       </div>
     </div>
 
-    <div class="summary-card resolved">
-      <div class="icon-circle green">
-        <i class="fas fa-check-circle"></i>
+    <!-- Resolved Today -->
+    <div class="stat-card stat-card--resolved">
+      <div class="stat-card__left">
+        <span class="stat-card__label">Resolved Today</span>
+        <span class="stat-card__value">{{ resolvedCount }}</span>
+        <span class="stat-card__sub stat-card__sub--success">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2" />
+            <path d="M3.5 6.2l1.8 1.8 3.2-3.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+          {{ stats.successRate }}% success rate
+        </span>
       </div>
-      <div class="card-content">
-        <p class="label">RESOLVED ALERTS</p>
-        <h3>{{ resolvedAlerts }}</h3>
+      <div class="stat-card__icon stat-card__icon--resolved">
+        <!-- checkmark circle -->
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M7 12.5l3.5 3.5 6.5-7" />
+        </svg>
       </div>
     </div>
+
   </div>
 
-  <!-- Filters -->
-  <div class="filters">
-    <input type="text" placeholder="Search by name or contact..." [(ngModel)]="searchQuery" />
-    <select [(ngModel)]="statusFilter">
-      <option>All Status</option>
-      <option>Active</option>
-      <option>Pending</option>
-      <option>Resolved</option>
-    </select>
-    <button class="filter-btn"><i class="fas fa-filter"></i></button>
-  </div>
+  <!-- ── Dispatch Panel ────────────────────────────────────────────────────── -->
+  <div class="dispatch-panel">
 
-  <!-- Alerts table -->
-  <div class="alerts-table">
-    <table>
+    <!-- Header / Title + Badge -->
+    <div class="dispatch-header">
+      <div class="dispatch-header__left">
+        <span class="dispatch-title">Dispatch Queue</span>
+        <span class="live-badge">
+          <span class="live-badge__dot"></span>
+          LIVE UPDATING
+        </span>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-row">
+
+        <select class="filter-select" [(ngModel)]="typeFilter">
+          <option value="">All Alert Types</option>
+          <option value="MEDICAL">Medical</option>
+          <option value="WILDLIFE_ENCOUNTER">Wildlife Encounter</option>
+          <option value="VEHICLE_BREAKDOWN">Vehicle Breakdown</option>
+          <option value="GENERAL_DISTRESS">General Distress</option>
+          <option value="ACCIDENT">Accident</option>
+          <option value="LOST">Lost</option>
+        </select>
+
+        <select class="filter-select" [(ngModel)]="statusFilter">
+          <option value="">All Statuses</option>
+          <option value="PENDING">Pending</option>
+          <option value="RESPONDING">Responding</option>
+          <option value="RESOLVED">Resolved</option>
+          <option value="FALSE_ALARM">False Alarm</option>
+        </select>
+
+        <button class="btn btn--filter" (click)="loadAlerts()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6" />
+            <line x1="8" y1="12" x2="16" y2="12" />
+            <line x1="11" y1="18" x2="13" y2="18" />
+          </svg>
+          More Filters
+        </button>
+
+        <button class="btn btn--export" (click)="exportLog()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Export Log
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Table -->
+    <table class="alert-table">
       <thead>
         <tr>
           <th>Visitor Name</th>
-          <th>Location</th>
-          <th>Contact</th>
-          <th>Coordinates</th>
+          <th>Alert Type</th>
+          <th class="hide-mobile">Coordinates</th>
           <th>Time</th>
-          <th>Status</th>
+          <th>Alert Status</th>
           <th>Actions</th>
         </tr>
       </thead>
+
       <tbody>
-        <tr *ngFor="let a of filteredAlerts">
-          <td>{{ a.name }}</td>
-          <td>{{ a.location }}</td>
-          <td>{{ a.contact }}</td>
-          <td>{{ a.coordinates }}</td>
-          <td>{{ a.time }}</td>
-          <td>
-            <span class="status" [ngClass]="a.status.toLowerCase()">{{ a.status }}</span>
-          </td>
-          <td class="actions">
-            <button class="icon-btn" title="View details"><i class="fas fa-eye"></i></button>
-            <button class="icon-btn" title="Resolve"><i class="fas fa-check"></i></button>
-            <button class="icon-btn" title="Escalate"><i class="fas fa-exclamation"></i></button>
+
+        <!-- Loading state -->
+        <tr *ngIf="isLoading" class="state-row">
+          <td colspan="6">
+            <div class="spinner"></div>
+            <p>Loading alerts…</p>
           </td>
         </tr>
+
+        <!-- Error state -->
+        <tr *ngIf="!isLoading && errorMessage" class="state-row">
+          <td colspan="6" class="error-text">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            {{ errorMessage }}
+          </td>
+        </tr>
+
+        <!-- Empty state -->
+        <tr *ngIf="!isLoading && !errorMessage && filteredAlerts.length === 0" class="state-row">
+          <td colspan="6">No alerts found.</td>
+        </tr>
+
+        <!-- Data rows -->
+        <tr *ngFor="let alert of filteredAlerts; let i = index" [attr.data-id]="alert.id">
+
+          <!-- Visitor -->
+          <td>
+            <div class="visitor-cell">
+              <div class="avatar" [ngClass]="avatarClass(i)">
+                {{ getInitials(alert.visitorName) }}
+              </div>
+              <span class="visitor-name">{{ alert.visitorName }}</span>
+            </div>
+          </td>
+
+          <!-- Alert Type -->
+          <td>
+            <div class="alert-type-cell">
+              <!-- Medical -->
+              <ng-container *ngIf="alert.alertType === 'MEDICAL'">
+                <span class="alert-type-icon alert-type-icon--medical">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M12 8v8M8 12h8" />
+                  </svg>
+                </span>
+              </ng-container>
+              <!-- Wildlife Encounter -->
+              <ng-container *ngIf="alert.alertType === 'WILDLIFE_ENCOUNTER'">
+                <span class="alert-type-icon alert-type-icon--wildlife">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 7a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM8 7a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z" />
+                    <path d="M12 14c-4 0-7 2-7 4v1h14v-1c0-2-3-4-7-4Z" />
+                    <path d="M12 14c0-2 1-4 3-5M12 14c0-2-1-4-3-5" />
+                  </svg>
+                </span>
+              </ng-container>
+              <!-- Vehicle Breakdown -->
+              <ng-container *ngIf="alert.alertType === 'VEHICLE_BREAKDOWN'">
+                <span class="alert-type-icon alert-type-icon--vehicle">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="3" width="15" height="13" rx="2" />
+                    <path d="M16 8h4l3 5v3h-7V8Z" />
+                    <circle cx="5.5" cy="18.5" r="2.5" />
+                    <circle cx="18.5" cy="18.5" r="2.5" />
+                  </svg>
+                </span>
+              </ng-container>
+              <!-- General Distress -->
+              <ng-container *ngIf="alert.alertType === 'GENERAL_DISTRESS'">
+                <span class="alert-type-icon alert-type-icon--distress">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0Z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </span>
+              </ng-container>
+              <!-- Accident -->
+              <ng-container *ngIf="alert.alertType === 'ACCIDENT'">
+                <span class="alert-type-icon alert-type-icon--accident">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                      d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </span>
+              </ng-container>
+              <!-- Lost -->
+              <ng-container *ngIf="alert.alertType === 'LOST'">
+                <span class="alert-type-icon alert-type-icon--lost">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                  </svg>
+                </span>
+              </ng-container>
+
+              <span class="alert-type-label" [ngClass]="alertTypeClass(alert.alertType)">
+                {{ humanizeAlertType(alert.alertType) }}
+              </span>
+            </div>
+          </td>
+
+          <!-- Coordinates -->
+          <td class="hide-mobile">
+            <div class="coords">{{ formatCoordinates(alert.latitude, alert.longitude) }}</div>
+          </td>
+
+          <!-- Time -->
+          <td>
+            <div class="time-cell">
+              <span class="time-main">{{ formatTime(alert.createdAt).time }}</span>
+              <span class="time-relative">({{ formatTime(alert.createdAt).relative }})</span>
+            </div>
+          </td>
+
+          <!-- Status -->
+          <td>
+            <span class="status-badge" [ngClass]="'status-badge--' + alert.alertStatus.toLowerCase()">
+              <span class="status-badge__icon" *ngIf="alert.alertStatus === 'RESPONDING'">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </span>
+              <span class="status-badge__icon" *ngIf="alert.alertStatus === 'RESOLVED'">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              <span class="status-badge__icon" *ngIf="alert.alertStatus === 'FALSE_ALARM'">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              {{ statusLabel(alert.alertStatus) }}
+            </span>
+          </td>
+
+          <!-- Actions -->
+          <td>
+            <button class="action-btn" title="View details" (click)="viewAlert(alert.id)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </td>
+
+        </tr>
+
       </tbody>
     </table>
+
   </div>
 
-  <!-- Map / Side panel -->
-  <div class="map-section">
-    <h4>Alert Locations</h4>
-    <div class="map-placeholder">
-      <!-- Replace with actual map integration later -->
-      <p>Map showing alert coordinates will appear here.</p>
-    </div>
-  </div>
 </div>
