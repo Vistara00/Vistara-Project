@@ -1,26 +1,126 @@
 <div *ngIf="show" class="popup-overlay" (click)="onClose()"></div>
 <div *ngIf="show" class="popup-card">
+
+    <!-- Header -->
     <div class="popup-header">
-        <h3>Booking Details</h3>
+        <div class="header-icon">
+            <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="header-text">
+            <h3>Booking Details</h3>
+            <p class="subtitle">View full information about this booking</p>
+        </div>
         <button class="close-btn" (click)="onClose()">×</button>
     </div>
 
     <div class="popup-body">
-        <p><strong>Booking ID:</strong> {{ booking?.id }}</p>
-        <p><strong>Reference:</strong> {{ booking?.bookingReference }}</p>
-        <p><strong>Visitor:</strong> {{ booking?.userFullName }}</p>
-        <p><strong>Email:</strong> {{ booking?.userEmail }}</p>
-        <p><strong>Phone:</strong> {{ booking?.userPhoneNumber }}</p>
-        <p><strong>Vehicle:</strong> {{ booking?.vehicleRegistration }}</p>
-        <p><strong>Amount:</strong> {{ booking?.amount | currency }}</p>
-        <p><strong>Status:</strong> {{ booking?.bookingStatus }}</p>
-        <p><strong>Payment:</strong> {{ booking?.paymentStatus }}</p>
-        <p><strong>Check‑in:</strong> {{ booking?.checkInDate }}</p>
-        <p><strong>Check‑out:</strong> {{ booking?.checkOutDate }}</p>
+
+        <!-- Booking ID + Reference Row -->
+        <div class="booking-ref-row">
+            <div class="booking-id-box">
+                <span class="ref-label">Booking ID</span>
+                <span class="ref-id">{{ booking?.id }}</span>
+            </div>
+            <div class="booking-ref-box">
+                <span class="ref-label">Reference</span>
+                <div class="ref-value-row">
+                    <span class="ref-value">{{ booking?.bookingReference }}</span>
+                    <button class="copy-btn" (click)="copyReference(booking?.bookingReference)" title="Copy reference">
+                        <i class="far fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guest Information -->
+        <div class="section-title">
+            <i class="fas fa-user-friends"></i> Guest Information
+        </div>
+
+        <div class="guest-grid">
+            <!-- Left: visitor details -->
+            <div class="guest-left">
+                <div class="guest-row">
+                    <i class="fas fa-user"></i>
+                    <span class="g-label">Visitor</span>
+                    <span class="g-value">{{ booking?.userFullName }}</span>
+                </div>
+                <div class="guest-row">
+                    <i class="fas fa-envelope"></i>
+                    <span class="g-label">Email</span>
+                    <span class="g-value">{{ booking?.userEmail }}</span>
+                </div>
+                <div class="guest-row">
+                    <i class="fas fa-phone"></i>
+                    <span class="g-label">Phone</span>
+                    <span class="g-value">{{ booking?.userPhoneNumber }}</span>
+                </div>
+                <div class="guest-row">
+                    <i class="fas fa-car"></i>
+                    <span class="g-label">Vehicle</span>
+                    <span class="g-value">{{ booking?.vehicleRegistration }}</span>
+                </div>
+            </div>
+
+            <!-- Right: amount, status, payment -->
+            <div class="guest-right">
+                <div class="guest-row">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span class="g-label">Amount</span>
+                    <span class="g-value">{{ booking?.amount | currency }}</span>
+                </div>
+                <div class="guest-row">
+                    <i class="fas fa-info-circle"></i>
+                    <span class="g-label">Status</span>
+                    <span class="badge badge-confirmed">{{ booking?.bookingStatus }}</span>
+                </div>
+                <div class="guest-row">
+                    <i class="fas fa-credit-card"></i>
+                    <span class="g-label">Payment</span>
+                    <span class="badge badge-paid">{{ booking?.paymentStatus }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Check-in / Check-out -->
+        <div class="check-section">
+            <div class="check-item">
+                <div class="check-icon check-icon-green">
+                    <i class="fas fa-sign-in-alt"></i>
+                </div>
+                <div class="check-info">
+                    <span class="check-label">Check-in</span>
+                    <span class="check-date">{{ booking?.checkInDate | date:'MMMM d, yyyy' }}</span>
+                    <span class="check-day">{{ booking?.checkInDate | date:'EEEE' }}</span>
+                </div>
+            </div>
+
+            <div class="check-arrows">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+
+            <div class="check-item">
+                <div class="check-icon check-icon-red">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <div class="check-info">
+                    <span class="check-label">Check-out</span>
+                    <span class="check-date">{{ booking?.checkOutDate | date:'MMMM d, yyyy' }}</span>
+                    <span class="check-day">{{ booking?.checkOutDate | date:'EEEE' }}</span>
+                </div>
+            </div>
+        </div>
+
     </div>
 
+    <!-- Footer -->
     <div class="popup-footer">
-        <button class="action-btn green" (click)="onCheckin()">Check‑in</button>
-        <button class="action-btn red" (click)="onCheckout()">Check‑out</button>
+        <button class="action-btn btn-checkin" (click)="onCheckin()">
+            <i class="fas fa-sign-in-alt"></i> Check-in
+        </button>
+        <button class="action-btn btn-checkout" (click)="onCheckout()">
+            <i class="fas fa-sign-out-alt"></i> Check-out
+        </button>
     </div>
+
 </div>

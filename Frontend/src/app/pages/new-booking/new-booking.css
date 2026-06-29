@@ -1,16 +1,17 @@
 /* Overlay */
 .modal-overlay {
-  position: fixed;           
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(17, 24, 39, 0.6); 
+  background: rgba(17, 24, 39, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;             
+  z-index: 1000;
 }
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -23,7 +24,6 @@
   margin-bottom: 4px;
 }
 
-
 /* Modal box */
 .modal {
   background: #ffffff;
@@ -31,18 +31,19 @@
   width: 600px;
   max-width: 95%;
   padding: 24px 28px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   animation: fadeIn 0.3s ease;
   position: relative;
+  /* needed so overlays position against the modal */
+  overflow: hidden;
+  /* clips the overlay to the modal's rounded corners */
 }
 
+/* ── Loading overlay ──────────────────────────────────────── */
 .loader-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.7);
+  inset: 0;
+  background: rgba(255, 255, 255, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -50,6 +51,48 @@
   border-radius: 12px;
 }
 
+/* ── Success / Fail animation overlay ────────────────────── */
+.anim-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.96);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  /* above loader */
+  border-radius: 12px;
+  animation: fadeInOverlay 0.25s ease;
+}
+
+.anim-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Size the SVG — it drives its own animation internally */
+.anim-img {
+  width: 120px;
+  height: 120px;
+}
+
+.anim-label {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.success-label {
+  color: #16a34a;
+}
+
+.fail-label {
+  color: #dc2626;
+}
+
+/* ── Rest of existing styles ──────────────────────────────── */
 .modal h3 {
   font-size: 1.4rem;
   font-weight: 700;
@@ -57,7 +100,6 @@
   margin-bottom: 20px;
 }
 
-/* Form grid */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -81,7 +123,6 @@
   outline: none;
 }
 
-/* Payment methods */
 .payment-methods {
   display: flex;
   gap: 20px;
@@ -96,7 +137,6 @@
   cursor: pointer;
 }
 
-/* Actions */
 .actions {
   display: flex;
   justify-content: flex-end;
@@ -126,7 +166,6 @@
   color: #ffffff;
 }
 
-/* Loader spinner */
 .loader {
   border: 4px solid #f3f3f3;
   border-top: 4px solid #2563eb;
@@ -134,12 +173,6 @@
   width: 40px;
   height: 40px;
   animation: spin 1s linear infinite;
-  margin: 0 auto 20px auto; 
-}
-
-.modal.loading form {
-  opacity: 0.5;
-  pointer-events: none;
 }
 
 .confirm-btn:disabled {
@@ -149,21 +182,33 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-/* Success checkmark */
-.success-check {
-  width: 40px;
-  height: 40px;
-  background: url('../../../assets/images/checkmark.svg') no-repeat center;
-  background-size: contain;
-  margin: 20px auto;
-}
-
-/* Fade-in animation */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }

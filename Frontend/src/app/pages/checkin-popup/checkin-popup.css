@@ -1,63 +1,387 @@
+/* ─── Overlay ─────────────────────────────────────────────── */
 .popup-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+    background: rgba(0, 0, 0, 0.40);
+    backdrop-filter: blur(2px);
+    z-index: 999;
 }
 
+/* ─── Card ────────────────────────────────────────────────── */
 .popup-card {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: #fff;
-    border-radius: 10px;
-    width: 500px;
-    max-width: 90%;
-    padding: 20px;
-    z-index: 1001;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    width: 540px;
+    max-width: 94vw;
+    z-index: 1000;
+    animation: popIn 0.25s ease;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    /* No max-height or overflow — let it size to content */
 }
 
+/* ─── Header ──────────────────────────────────────────────── */
 .popup-header {
     display: flex;
-    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.header-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    background: #e8f5e9;
+    display: flex;
     align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.header-icon i {
+    color: #2e7d32;
+    font-size: 16px;
+}
+
+.header-text {
+    flex: 1;
+}
+
+.header-text h3 {
+    margin: 0 0 1px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #111;
+}
+
+.popup-header .subtitle {
+    margin: 0;
+    font-size: 12px;
+    color: #888;
 }
 
 .close-btn {
     background: none;
     border: none;
-    font-size: 20px;
+    font-size: 22px;
+    line-height: 1;
+    color: #aaa;
     cursor: pointer;
+    padding: 0;
+    transition: color 0.15s;
 }
 
-.popup-body p {
-    margin: 6px 0;
-    font-size: 14px;
+.close-btn:hover {
+    color: #333;
 }
 
-.popup-footer {
+/* ─── Body ────────────────────────────────────────────────── */
+.popup-body {
+    padding: 14px 20px 6px;
+}
+
+/* ─── Booking ID + Reference ─────────────────────────────── */
+.booking-ref-row {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 15px;
+    gap: 0;
+    background: #f7faf7;
+    border: 1px solid #e3ede3;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    align-items: center;
 }
 
-.action-btn {
-    padding: 8px 14px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
+.booking-id-box {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 80px;
+    border-right: 1px solid #dde8dd;
+    padding-right: 14px;
+    margin-right: 14px;
+}
+
+.booking-ref-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.ref-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
     font-weight: 600;
 }
 
-.action-btn.green {
+.ref-id {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.1;
+}
+
+.ref-value-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ref-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #222;
+}
+
+.copy-btn {
+    background: none;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    color: #2e7d32;
+    font-size: 13px;
+    padding: 3px 6px;
+    border-radius: 5px;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+
+.copy-btn:hover {
+    background: #e8f5e9;
+    border-color: #2e7d32;
+}
+
+.copy-toast {
+    font-size: 11px;
+    color: #2e7d32;
+    font-weight: 600;
+}
+
+/* ─── Section title ───────────────────────────────────────── */
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2e7d32;
+    margin-bottom: 8px;
+}
+
+/* ─── Guest grid ──────────────────────────────────────────── */
+.guest-grid {
+    display: flex;
+    border: 1px solid #ebebeb;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.guest-left {
+    flex: 1.1;
+    border-right: 1px solid #ebebeb;
+}
+
+.guest-right {
+    flex: 0.9;
+}
+
+.guest-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
+    border-bottom: 1px solid #f4f4f4;
+}
+
+.guest-row:last-child {
+    border-bottom: none;
+}
+
+.guest-row i {
+    color: #999;
+    font-size: 12px;
+    width: 13px;
+    flex-shrink: 0;
+}
+
+.g-label {
+    font-size: 12px;
+    color: #888;
+    min-width: 50px;
+}
+
+.g-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1a1a1a;
+    word-break: break-word;
+}
+
+/* ─── Badges ──────────────────────────────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.badge-confirmed {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.badge-paid {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+/* ─── Check-in / Check-out ────────────────────────────────── */
+.check-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    background: #fafafa;
+    border: 1px solid #ebebeb;
+    border-radius: 10px;
+    margin-bottom: 2px;
+}
+
+.check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.check-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.check-icon-green {
+    background: #e8f5e9;
+}
+
+.check-icon-green i {
+    color: #2e7d32;
+    font-size: 14px;
+}
+
+.check-icon-red {
+    background: #ffebee;
+}
+
+.check-icon-red i {
+    color: #c62828;
+    font-size: 14px;
+}
+
+.check-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.check-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #999;
+    font-weight: 600;
+}
+
+.check-date {
+    font-size: 13px;
+    font-weight: 700;
+    color: #111;
+    line-height: 1.3;
+}
+
+.check-day {
+    font-size: 11px;
+    color: #777;
+}
+
+.check-arrows {
+    color: #bbb;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+/* ─── Footer ──────────────────────────────────────────────── */
+.popup-footer {
+    display: flex;
+    gap: 10px;
+    padding: 12px 20px 16px;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 12px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 11px 0;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: all 0.18s ease;
+}
+
+.btn-checkin {
+    background: #ffffff;
+    color: #2e7d32;
+    border: 2px solid #2e7d32;
+}
+
+.btn-checkin:hover {
     background: #2e7d32;
     color: #fff;
 }
 
-.action-btn.red {
-    background: #dc2626;
-    color: #fff;
+.btn-checkout {
+    background: #d32f2f;
+    color: #ffffff;
+    border: 2px solid #d32f2f;
+}
+
+.btn-checkout:hover {
+    background: #b71c1c;
+    border-color: #b71c1c;
+}
+
+/* ─── Animation ───────────────────────────────────────────── */
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -46%) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
 }

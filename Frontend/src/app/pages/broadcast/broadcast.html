@@ -1,68 +1,184 @@
 <div class="broadcast-page">
-    <!-- Compose Broadcast -->
-    <div class="compose-section">
-        <div class="compose-header">
-            <h3><i class="fa fa-paper-plane"></i> Compose Broadcast</h3>
-            <span class="char-count">Characters: {{ broadcastMessage.length }}/240</span>
+
+    <!-- ── Compose Broadcast ─────────────────────────────────── -->
+    <div class="compose-card">
+
+        <!-- Loading overlay -->
+        <div class="anim-overlay" *ngIf="loading">
+            <div class="anim-box">
+                <div class="spinner"></div>
+                <p class="anim-label">Sending broadcast...</p>
+            </div>
         </div>
 
-        <form (ngSubmit)="sendBroadcast()" #broadcastForm="ngForm" class="broadcast-form">
-            <div class="form-group">
-                <label for="title">Broadcast Title</label>
-                <input type="text" id="title" name="title" [(ngModel)]="broadcastTitle"
-                    placeholder="e.g., Weather Warning: North Sector" maxlength="100" required />
+        <!-- Success overlay -->
+        <div class="anim-overlay" *ngIf="success">
+            <div class="anim-box">
+                <object [attr.data]="successSrc" type="image/svg+xml" class="anim-img" aria-label="Success"></object>
+                <p class="anim-label success-label">Broadcast Sent Successfully!</p>
+            </div>
+        </div>
+
+        <!-- Failed overlay -->
+        <div class="anim-overlay" *ngIf="failed">
+            <div class="anim-box">
+                <object [attr.data]="failSrc" type="image/svg+xml" class="anim-img" aria-label="Failed"></object>
+                <p class="anim-label fail-label">Broadcast Failed. Please try again.</p>
+            </div>
+        </div>
+
+        <div class="compose-card-header">
+            <div class="compose-card-title">
+                <div class="header-icon">
+                    <i class="fas fa-broadcast-tower"></i>
+                </div>
+                <div>
+                    <h2>Compose Broadcast</h2>
+                    <p>Send important updates and announcements to your visitors.</p>
+                </div>
+            </div>
+            <span class="char-badge">Characters: {{ broadcastMessage.length }} / 240</span>
+        </div>
+
+        <div class="compose-body">
+
+            <!-- Left: Title + Target -->
+            <div class="compose-left">
+
+                <!-- BROADCAST TITLE — now on top -->
+                <div class="field-row">
+                    <div class="field-group" [class.half]="selectedTarget === 'specific'">
+                        <label class="section-label" style="margin-top:0">BROADCAST TITLE</label>
+                        <div class="input-wrapper">
+                            <input type="text" [(ngModel)]="broadcastTitle"
+                                placeholder="e.g., Weather Warning: North Sector" maxlength="100" class="field-input" />
+                            <span class="input-icon"><i class="fas fa-font"></i></span>
+                        </div>
+                    </div>
+                    <div class="field-group half" *ngIf="selectedTarget === 'specific'">
+                        <label class="section-label" style="margin-top:0">VISITOR ID</label>
+                        <input type="number" [(ngModel)]="specificVisitorId" placeholder="Enter Visitor ID"
+                            class="field-input" />
+                    </div>
+                </div>
+
+                <!-- BROADCAST TARGET — now below title -->
+                <div class="section-label">BROADCAST TARGET</div>
+                <div class="target-grid">
+                    <div class="target-card" [class.active]="selectedTarget === 'active'"
+                        (click)="selectedTarget = 'active'">
+                        <i class="fas fa-users"></i>
+                        <div>
+                            <strong>Active Visitors</strong>
+                            <span>Online users only</span>
+                        </div>
+                    </div>
+                    <div class="target-card" [class.active]="selectedTarget === 'all'" (click)="selectedTarget = 'all'">
+                        <i class="fas fa-users"></i>
+                        <div>
+                            <strong>All Users</strong>
+                            <span>Everyone in the system</span>
+                        </div>
+                    </div>
+                    <div class="target-card" [class.active]="selectedTarget === 'specific'"
+                        (click)="selectedTarget = 'specific'">
+                        <i class="fas fa-user"></i>
+                        <div>
+                            <strong>Specific User</strong>
+                            <span>Select individual user</span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
-            <div class="form-group">
-                <label for="message">Message Content</label>
-                <textarea id="message" name="message" [(ngModel)]="broadcastMessage"
-                    placeholder="Type your message here. Be clear and concise..." maxlength="240" rows="4"
-                    required></textarea>
+            <!-- Right: Message + Send -->
+            <div class="compose-right">
+                <label class="section-label">MESSAGE CONTENT</label>
+                <textarea [(ngModel)]="broadcastMessage" placeholder="Type your message here. Be clear and concise..."
+                    maxlength="240" rows="6" class="field-textarea"></textarea>
+                <div class="compose-footer">
+                    <span class="char-hint">{{ broadcastMessage.length }} / 240 characters</span>
+                    <button class="send-btn" (click)="sendBroadcast()" [disabled]="loading">
+                        <i class="fas fa-paper-plane"></i> Send Broadcast
+                    </button>
+                </div>
             </div>
 
-            <button type="submit" class="send-btn">
-                <i class="fa fa-paper-plane"></i> Send Broadcast
-            </button>
-        </form>
+        </div>
     </div>
 
+    <!-- ── Broadcast History ──────────────────────────────────── -->
+    <div class="history-card">
 
-    <!-- Broadcast History -->
-    <div class="history-section">
-        <h3><i class="fa fa-history"></i> Broadcast History</h3>
+        <div class="history-card-header">
+            <div class="history-card-title">
+                <div class="header-icon history-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div>
+                    <h2>Broadcast History</h2>
+                    <p>View and track all previously sent broadcasts.</p>
+                </div>
+            </div>
+            <div class="history-actions">
+                <button class="outline-btn"><i class="fas fa-filter"></i> Filter</button>
+                <button class="outline-btn"><i class="fas fa-download"></i> Export</button>
+            </div>
+        </div>
 
         <table class="history-table">
             <thead>
                 <tr>
-                    <th>Date / Time</th>
-                    <th>Broadcast Title</th>
-                    <th>Message</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th>DATE &amp; TIME</th>
+                    <th>BROADCAST TITLE</th>
+                    <th>STATUS</th>
+                    <th>ACTIONS</th>
                 </tr>
             </thead>
-
             <tbody>
+                <tr *ngIf="broadcasts.length === 0">
+                    <td colspan="4" class="empty-state">No broadcasts sent yet.</td>
+                </tr>
                 <tr *ngFor="let item of broadcasts">
-                    <td>{{ item.timestamp | date: 'MMM d, y, h:mm a' }}</td>
-                    <td>{{ item.title }}</td>
-                    <td class="message-cell">{{ item.message }}</td>
+                    <td class="date-cell">
+                        <div class="date-icon-wrap">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div>
+                            <div class="date-main">{{ item.timestamp | date:'MMM d, y' }}</div>
+                            <div class="date-time">{{ item.timestamp | date:'hh:mm a' }}</div>
+                        </div>
+                    </td>
+                    <td class="title-cell">
+                        <div class="item-title">{{ item.title }}</div>
+                        <div class="item-preview">{{ item.message | slice:0:55 }}...</div>
+                    </td>
                     <td>
-                        <span class="status delivered" *ngIf="item.status === 'Delivered'">
-                            <i class="fa fa-check-circle"></i> Delivered
+                        <span class="status-badge sent" *ngIf="item.status === 'Delivered'">
+                            <i class="fas fa-check-circle"></i> Sent ({{ item.recipientCount || 0 }})
                         </span>
-                        <span class="status pending" *ngIf="item.status === 'Pending'">
-                            <i class="fa fa-clock"></i> Pending
+                        <span class="status-badge delivered" *ngIf="item.status === 'Pending'">
+                            <i class="fas fa-paper-plane"></i> Delivered ({{ item.recipientCount || 0 }})
                         </span>
                     </td>
                     <td>
-                        <button class="action-btn">
-                            <i class="fa fa-eye"></i>
-                        </button>
+                        <button class="icon-btn"><i class="fas fa-eye"></i></button>
                     </td>
                 </tr>
             </tbody>
         </table>
+
+        <div class="table-footer">
+            <span class="showing-text">Showing {{ broadcasts.length }} of {{ totalBroadcasts }} broadcast
+                events</span>
+            <div class="pagination">
+                <button class="page-btn" (click)="prevPage()" [disabled]="currentPage === 1">Previous</button>
+                <button class="page-btn page-num" *ngFor="let p of pageNumbers" [class.active]="p === currentPage"
+                    (click)="goToPage(p)">{{ p }}</button>
+                <button class="page-btn" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+            </div>
+        </div>
 
     </div>
 </div>

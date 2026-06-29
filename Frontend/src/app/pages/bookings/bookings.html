@@ -10,8 +10,15 @@
       <button class="new-booking-btn" (click)="openBookingModal()">+ New Booking</button>
     </div>
 
-    <!-- Modal -->
-    <app-new-booking *ngIf="showModal" (close)="closeBookingModal()"></app-new-booking>
+    <!--
+      Modal:
+      - *ngIf instead of [hidden] so the component is only mounted when needed
+      - (close) fires after the success animation completes (2.5s delay in child)
+      - (cancel) fires immediately when Cancel is clicked
+    -->
+    <app-new-booking *ngIf="showModal" (close)="closeBookingModal()" (cancel)="closeBookingModal()"
+      (bookingSuccess)="fetchBookings()"> ← add this
+    </app-new-booking>
 
     <!-- Summary cards -->
     <div class="summary-cards">
@@ -105,14 +112,11 @@
         Showing {{ currentPage * pageSize + 1 }}–{{ currentPage * pageSize + bookings.length }} of {{ totalItems }}
         results
       </p>
-
       <div class="pagination" *ngIf="totalItems > pageSize">
         <button class="page-btn" (click)="prevPage()" [disabled]="!hasPrev">
           <i class="fas fa-chevron-left"></i> Prev
         </button>
-
         <span class="page-info">Page {{ currentPage + 1 }} of {{ totalPages }}</span>
-
         <button class="page-btn" (click)="nextPage()" [disabled]="!hasNext">
           Next <i class="fas fa-chevron-right"></i>
         </button>

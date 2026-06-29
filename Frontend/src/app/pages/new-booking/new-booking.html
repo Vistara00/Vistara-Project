@@ -1,70 +1,96 @@
 <div class="modal-overlay">
   <div class="modal">
-<h3>Create New Booking</h3>
-<div class="loader-overlay" *ngIf="loading">
-  <div class="loader"></div>
+    <h3>Create New Booking</h3>
+
+    <!-- Loading spinner -->
+    <div class="loader-overlay" *ngIf="loading">
+      <div class="loader"></div>
+    </div>
+
+    <!-- Success animation overlay -->
+    <div class="anim-overlay" *ngIf="success">
+      <div class="anim-box">
+        <!--
+          Using <object> instead of <img>:
+          - <img> caches the SVG and does NOT restart its animations
+          - <object> loads the SVG as a full document, so every time
+            *ngIf recreates this element the SVG restarts from frame 0
+          - The cache-busted [attr.data] (animKey) guarantees a fresh load
+        -->
+        <object [attr.data]="successSrc" type="image/svg+xml" class="anim-img" aria-label="Success">
+        </object>
+        <p class="anim-label success-label">Booking Confirmed!</p>
+      </div>
+    </div>
+
+    <!-- Failure animation overlay -->
+    <div class="anim-overlay" *ngIf="failed">
+      <div class="anim-box">
+        <object [attr.data]="failSrc" type="image/svg+xml" class="anim-img" aria-label="Failed">
+        </object>
+        <p class="anim-label fail-label">Booking Failed. Please try again.</p>
+      </div>
+    </div>
+
+    <form (ngSubmit)="confirmBooking(bookingForm)" #bookingForm="ngForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input name="fullName" ngModel placeholder="e.g. John Doe" required />
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input name="email" ngModel type="email" placeholder="john.doe@example.com" required />
+        </div>
+
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input name="phoneNumber" ngModel placeholder="0712345678" required />
+        </div>
+
+        <div class="form-group">
+          <label>Vehicle Registration</label>
+          <input name="vehicleRegistration" ngModel placeholder="KCA 456B" />
+        </div>
+
+        <div class="form-group">
+          <label>No. Of People</label>
+          <input name="numberOfPeople" ngModel type="number" min="1" required />
+        </div>
+
+        <div class="form-group">
+          <label>Check-in Date</label>
+          <input name="checkInDate" ngModel type="date" required />
+        </div>
+
+        <div class="form-group">
+          <label>Check-out Date</label>
+          <input name="checkOutDate" ngModel type="date" required />
+        </div>
+
+        <div class="form-group">
+          <label>Amount ($)</label>
+          <input name="amount" ngModel type="number" step="0.01" placeholder="0.00" required />
+        </div>
+
+        <div class="form-group">
+          <label>Notes</label>
+          <input name="notes" ngModel placeholder="Paid cash at gate" />
+        </div>
+      </div>
+
+      <div class="payment-methods">
+        <label><input type="radio" name="payment" value="Cash" ngModel required /> Cash</label>
+        <label><input type="radio" name="payment" value="Mpesa" ngModel /> M‑pesa</label>
+        <label><input type="radio" name="payment" value="Ecitizen" ngModel /> E‑citizen</label>
+      </div>
+
+      <div class="actions">
+        <button type="button" (click)="closeModal()">Cancel</button>
+        <button type="submit" class="confirm-btn" [disabled]="loading">Confirm Booking</button>
+      </div>
+    </form>
+
+  </div>
 </div>
-
-<form (ngSubmit)="confirmBooking(bookingForm)" #bookingForm="ngForm">
-  <div class="form-grid">
-    <div class="form-group">
-      <label>Full Name</label>
-      <input name="fullName" ngModel placeholder="e.g. John Doe" required />
-    </div>
-
-    <div class="form-group">
-      <label>Email</label>
-      <input name="email" ngModel type="email" placeholder="john.doe@example.com" required />
-    </div>
-
-    <div class="form-group">
-      <label>Phone Number</label>
-      <input name="phoneNumber" ngModel placeholder="0712345678" required />
-    </div>
-
-    <div class="form-group">
-      <label>Vehicle Registration</label>
-      <input name="vehicleRegistration" ngModel placeholder="KCA 456B" />
-    </div>
-
-    <div class="form-group">
-      <label>No. Of People</label>
-      <input name="numberOfPeople" ngModel type="number" min="1" required />
-    </div>
-
-    <div class="form-group">
-      <label>Check-in Date</label>
-      <input name="checkInDate" ngModel type="date" required />
-    </div>
-
-    <div class="form-group">
-      <label>Check-out Date</label>
-      <input name="checkOutDate" ngModel type="date" required />
-    </div>
-
-    <div class="form-group">
-      <label>Amount ($)</label>
-      <input name="amount" ngModel type="number" step="0.01" placeholder="0.00" required />
-    </div>
-
-    <div class="form-group">
-      <label>Notes</label>
-      <input name="notes" ngModel placeholder="Paid cash at gate" />
-    </div>
-  </div>
-
-  <div class="payment-methods">
-    <label><input type="radio" name="payment" value="Cash" ngModel required /> Cash</label>
-    <label><input type="radio" name="payment" value="Mpesa" ngModel /> M‑pesa</label>
-    <label><input type="radio" name="payment" value="Ecitizen" ngModel /> E‑citizen</label>
-  </div>
-
-  <div class="actions">
-    <button type="button" (click)="closeModal()">Cancel</button>
-    <button type="submit" class="confirm-btn">Confirm Booking</button>
-  </div>
-</form>
- 
-</div>
-
-

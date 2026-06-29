@@ -48,9 +48,6 @@ export class BookingsComponent implements OnInit {
     this.bookingService.getBookings(this.currentPage, this.pageSize).subscribe({
       next: (res: any) => {
         this.loading = false;
-        console.log('BOOKINGS RESPONSE:', res);
-
-        // Adjust these two lines to match your actual response shape
         this.totalItems = res.data?.total ?? res.total ?? res.data?.length ?? 0;
         const items = res.data?.items || res.data || [];
 
@@ -67,7 +64,6 @@ export class BookingsComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        console.error('BOOKINGS ERROR:', err);
         this.errorMessage = err?.error?.message || 'Failed to load bookings.';
       }
     });
@@ -79,13 +75,8 @@ export class BookingsComponent implements OnInit {
     this.fetchBookings();
   }
 
-  nextPage(): void {
-    this.goToPage(this.currentPage + 1);
-  }
-
-  prevPage(): void {
-    this.goToPage(this.currentPage - 1);
-  }
+  nextPage(): void { this.goToPage(this.currentPage + 1); }
+  prevPage(): void { this.goToPage(this.currentPage - 1); }
 
   openBookingModal(): void {
     this.showModal = true;
@@ -93,5 +84,6 @@ export class BookingsComponent implements OnInit {
 
   closeBookingModal(): void {
     this.showModal = false;
+    this.fetchBookings();
   }
 }
