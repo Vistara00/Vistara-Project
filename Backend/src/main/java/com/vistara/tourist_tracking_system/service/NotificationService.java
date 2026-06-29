@@ -4,14 +4,17 @@ import com.vistara.tourist_tracking_system.dto.NotificationRequest;
 import com.vistara.tourist_tracking_system.dto.NotificationResponse;
 import com.vistara.tourist_tracking_system.model.Notification;
 import com.vistara.tourist_tracking_system.model.User;
+import com.vistara.tourist_tracking_system.model.VisitorSession;
 import com.vistara.tourist_tracking_system.repository.NotificationRepository;
 import com.vistara.tourist_tracking_system.repository.UserRepository;
+import com.vistara.tourist_tracking_system.repository.VisitorSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,6 +25,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final VisitorSessionRepository sessionRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     // Create a notification for a specific user
@@ -72,11 +76,73 @@ public class NotificationService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Broadcast notification only to visitors with active sessions
+     */
+    @Transactional
+    public List<Notification> broadcastToActiveVisitors(String title, String message) {
+        // Get all active visitor sessions
+        List<VisitorSession> activeSessions = sessionRepository.findByActiveTrue();
+
+        if (activeSessions.isEmpty()) {
+            log.info("No active sessions found. Broadcast not sent.");
+            return new ArrayList<>();
+        }
+
+        // Extract unique users from active sessions
+        List<User> activeUsers = activeSessions.stream()
+                .map(VisitorSession::getUser)
+                .distinct()
+                .collect(Collectors.toList());
+
+        log.info("Sending broadcast to {} active visitors", activeUsers.size());
+
+        // Send notification to each active user
+        return activeUsers.stream()
+                .map(user -> createNotification(
+                        user,
+                        title,
+                        message,
+                        "BROADCAST",
+                        null,
+                        true
+                ))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Broadcast to a specific user
+     */
+    @Transactional
+    public Notification broadcastToUser(Long userId, String title, String message) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return createNotification(user, title, message, "BROADCAST", null, true);
+    }
+
+    /**
+     * Broadcast to all users
+     */
+    @Transactional
+    public List<Notification> broadcastToAllUsers(String title, String message) {
+        List<User> allUsers = userRepository.findAll();
+        return allUsers.stream()
+                .map(user -> createNotification(user, title, message, "BROADCAST", null, true))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get count of active visitors (for dashboard)
+     */
+    public long getActiveVisitorsCount() {
+        return sessionRepository.countByActiveTrue();
+    }
+
     // Get notifications for the authenticated user
     public List<NotificationResponse> getUserNotifications(User user) {
         return notificationRepository.findByUserOrderByCreatedAtDesc(user)
                 .stream()
-                .map(this::convertToResponse)
+                .map(this::convertToSecureResponse)
                 .collect(Collectors.toList());
     }
 
@@ -84,7 +150,7 @@ public class NotificationService {
     public List<NotificationResponse> getUnreadNotifications(User user) {
         return notificationRepository.findByUserAndReadFalseOrderByCreatedAtDesc(user)
                 .stream()
-                .map(this::convertToResponse)
+                .map(this::convertToSecureResponse)
                 .collect(Collectors.toList());
     }
 
@@ -104,7 +170,7 @@ public class NotificationService {
         }
 
         notification.setRead(true);
-        return convertToResponse(notificationRepository.save(notification));
+        return convertToSecureResponse(notificationRepository.save(notification));
     }
 
     // Mark all notifications as read for a user
@@ -113,13 +179,21 @@ public class NotificationService {
         notificationRepository.markAllAsRead(user);
     }
 
+    // Get all broadcast notifications (for admin)
+    public List<NotificationResponse> getAllBroadcasts() {
+        return notificationRepository.findBroadcastNotifications()
+                .stream()
+                .map(this::convertToSecureResponse)
+                .collect(Collectors.toList());
+    }
+
     // WebSocket notification helper
     private void sendWebSocketNotification(User user, Notification notification) {
         try {
             messagingTemplate.convertAndSendToUser(
                     user.getEmail(),
                     "/queue/notifications",
-                    convertToResponse(notification)
+                    convertToSecureResponse(notification)
             );
             log.info("WebSocket notification sent to user: {}", user.getEmail());
         } catch (Exception e) {
@@ -127,41 +201,24 @@ public class NotificationService {
         }
     }
 
-    // Broadcast to all users
-    @Transactional
-    public List<Notification> broadcastToAllUsers(String title, String message) {
-        List<User> allUsers = userRepository.findAll();
-        return allUsers.stream()
-                .map(user -> createNotification(user, title, message, "BROADCAST", null, true))
-                .collect(Collectors.toList());
-    }
-
-    // Broadcast to a specific user
-    @Transactional
-    public Notification broadcastToUser(Long userId, String title, String message) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return createNotification(user, title, message, "BROADCAST", null, true);
-    }
-
-    // Get all broadcast notifications (for admin)
-    public List<NotificationResponse> getAllBroadcasts() {
-        return notificationRepository.findBroadcastNotifications()
-                .stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    private NotificationResponse convertToResponse(Notification notification) {
+    /**
+     * Convert Notification to NotificationResponse with ONLY safe, non-confidential information
+     * Hides: referenceId (booking IDs, session IDs), broadcast flag (internal admin detail)
+     * Shows: title, message, type, read status, created time
+     */
+    private NotificationResponse convertToSecureResponse(Notification notification) {
         NotificationResponse response = new NotificationResponse();
         response.setId(notification.getId());
         response.setTitle(notification.getTitle());
         response.setMessage(notification.getMessage());
         response.setType(notification.getType());
         response.setRead(notification.isRead());
-        response.setBroadcast(notification.isBroadcast());
-        response.setReferenceId(notification.getReferenceId());
         response.setCreatedAt(notification.getCreatedAt());
+
+        // DO NOT set referenceId (contains booking IDs, session IDs, etc.)
+        // DO NOT set broadcast flag (internal admin detail)
+        // These fields are intentionally omitted for security
+
         return response;
     }
 }

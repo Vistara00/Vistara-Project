@@ -1,7 +1,8 @@
 package com.vistara.tourist_tracking_system.controller;
 
+import com.vistara.tourist_tracking_system.dto.EmergencyAlertResponse;
 import com.vistara.tourist_tracking_system.dto.LocationUpdateDTO;
-import com.vistara.tourist_tracking_system.model.EmergencyAlert;
+import com.vistara.tourist_tracking_system.dto.SOSAlertDTO;
 import com.vistara.tourist_tracking_system.service.EmergencyService;
 import com.vistara.tourist_tracking_system.service.TrackingService;
 import lombok.RequiredArgsConstructor;
@@ -26,11 +27,14 @@ public class WebSocketController {
     }
 
     @MessageMapping("/sos")
-    public void handleSOS(EmergencyAlert alert) {
-        EmergencyAlert savedAlert = emergencyService.triggerSOS(
-                new com.vistara.tourist_tracking_system.dto.SOSAlertDTO()
-        );
+    public void handleSOS(SOSAlertDTO sosDTO) {
+        // Trigger SOS and get the response DTO
+        EmergencyAlertResponse savedAlert = emergencyService.triggerSOS(sosDTO);
+
+        // Broadcast to all subscribers
         messagingTemplate.convertAndSend("/topic/alerts", savedAlert);
+
+        // Send to admin specifically
         messagingTemplate.convertAndSendToUser("admin", "/queue/alerts", savedAlert);
     }
 }

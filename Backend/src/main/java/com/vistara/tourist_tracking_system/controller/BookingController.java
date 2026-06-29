@@ -47,6 +47,20 @@ public class BookingController {
         return ResponseEntity.ok(ApiResponse.success(responses, "Your bookings retrieved"));
     }
 
+    /**
+     * Get a specific booking by ID (for the authenticated visitor)
+     * Only returns the booking if it belongs to the authenticated user
+     */
+    @GetMapping("/{bookingId}")
+    public ResponseEntity<ApiResponse<BookingResponse>> getBookingById(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long bookingId) {
+        User user = userService.findByEmail(userDetails.getUsername());
+        Booking booking = bookingService.getBookingByIdAndUser(bookingId, user);
+        BookingResponse response = convertToResponse(booking);
+        return ResponseEntity.ok(ApiResponse.success(response, "Booking retrieved successfully"));
+    }
+
     @PostMapping("/{bookingId}/cancel")
     public ResponseEntity<ApiResponse<Void>> cancelBooking(@PathVariable Long bookingId) {
         bookingService.cancelBooking(bookingId);
@@ -61,6 +75,8 @@ public class BookingController {
         bookingService.deleteBooking(bookingId, currentUser);
         return ResponseEntity.ok(ApiResponse.success(null, "Booking deleted successfully"));
     }
+
+    // ========== PRIVATE HELPERS ==========
 
     private BookingResponse convertToResponse(Booking booking) {
         BookingResponse response = new BookingResponse();

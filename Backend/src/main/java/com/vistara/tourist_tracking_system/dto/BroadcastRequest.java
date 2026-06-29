@@ -11,5 +11,13 @@ public class BroadcastRequest {
     @NotBlank(message = "Message is required")
     private String message;
 
-    private Long userId;  // Optional: send to specific user, null = broadcast to all
+    private Long userId;  // Optional: send to specific user
+
+    // Broadcast type
+    private BroadcastType broadcastType = BroadcastType.ALL_USERS;
+
+    public enum BroadcastType {
+        ALL_USERS,      // All users in the system
+        ACTIVE_VISITORS // Only visitors with active sessions
+    }
 }

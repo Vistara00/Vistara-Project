@@ -17,6 +17,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Optional<Booking> findByBookingReference(String bookingReference);
 
+    Optional<Booking> findByPaymentTrackingId(String paymentTrackingId);
+
     List<Booking> findByUserId(Long userId);
 
     List<Booking> findByBookingStatus(String status);
@@ -27,17 +29,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findAllByOrderByCreatedAtDesc();
 
-    Optional<Booking> findByPaymentTrackingId(String paymentTrackingId);
-
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId AND b.bookingStatus = :status")
     List<Booking> findUserBookingsByStatus(@Param("userId") Long userId, @Param("status") String status);
 
-    // Daily average revenue for last N days
     @Query("SELECT AVG(b.amount) FROM Booking b WHERE b.paymentStatus = 'PAID' AND b.updatedAt >= :startDate")
     Double getAverageDailyRevenue(@Param("startDate") LocalDateTime startDate);
 
     @Query("SELECT FUNCTION('DATE', b.updatedAt) as date, SUM(b.amount) as total FROM Booking b " +
-            "WHERE b.paymentStatus = 'PAID' AND b.updatedAt >= :startDate GROUP BY FUNCTION('DATE', b.updatedAt) ORDER BY date")
+            "WHERE b.paymentStatus = 'PAID' AND b.updatedAt >= :startDate " +
+            "GROUP BY FUNCTION('DATE', b.updatedAt) ORDER BY date")
     List<Object[]> getDailyRevenue(@Param("startDate") LocalDateTime startDate);
 
     @Modifying
