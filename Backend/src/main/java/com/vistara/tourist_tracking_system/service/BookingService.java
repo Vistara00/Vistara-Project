@@ -94,9 +94,23 @@ public class BookingService {
 
         booking.setPaymentReference(paymentReference);
         booking.setPaymentStatus(paymentStatus);
+
         if (Booking.PaymentStatus.PAID.equals(paymentStatus)) {
             booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
+
+            // Send notification to user about manual payment confirmation
+            notificationService.createNotification(
+                    booking.getUser(),
+                    "Payment Confirmed ✅",
+                    "Your payment for booking " + booking.getBookingReference() + " has been confirmed by admin.",
+                    "PAYMENT",
+                    booking.getId(),
+                    false
+            );
+
+            log.info("✅ Booking {} manually confirmed by admin", bookingId);
         }
+
         bookingRepository.save(booking);
         log.info("Payment confirmed for booking {} with reference {}", bookingId, paymentReference);
     }
@@ -259,11 +273,46 @@ public class BookingService {
 
         booking.setPaymentReference(paymentReference);
         booking.setPaymentStatus(paymentStatus);
+
         if ("PAID".equals(paymentStatus)) {
             booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
-        }
-        bookingRepository.save(booking);
 
+            // Send notification to user about successful payment
+            notificationService.createNotification(
+                    booking.getUser(),
+                    "Payment Confirmed ✅",
+                    "Your payment for booking " + booking.getBookingReference() + " has been confirmed. Your booking is now confirmed.",
+                    "PAYMENT",
+                    booking.getId(),
+                    false
+            );
+
+            // Notify admin about successful payment
+            notificationService.createNotificationByEmail(
+                    "admin@vistara.com",
+                    "Payment Confirmed",
+                    "Booking " + booking.getBookingReference() + " has been paid and confirmed.",
+                    "PAYMENT",
+                    booking.getId(),
+                    false
+            );
+
+            log.info("✅ Booking {} updated to PAID and notifications sent", booking.getId());
+        } else if ("FAILED".equals(paymentStatus)) {
+            // Send notification to user about failed payment
+            notificationService.createNotification(
+                    booking.getUser(),
+                    "Payment Failed ❌",
+                    "Your payment for booking " + booking.getBookingReference() + " has failed. Please try again or contact support.",
+                    "PAYMENT",
+                    booking.getId(),
+                    false
+            );
+
+            log.warn("❌ Booking {} payment failed", booking.getId());
+        }
+
+        bookingRepository.save(booking);
         log.info("Booking {} updated to status: {}", booking.getId(), paymentStatus);
     }
 

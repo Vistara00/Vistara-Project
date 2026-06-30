@@ -214,28 +214,18 @@ public class AdminController {
 
     // ========== ACTIVE VISITORS WITH SESSION DETAILS ==========
 
-    /**
-     * Get all active visitors with their session details
-     * Returns session ID, visitor details, booking info, and location
-     */
     @GetMapping("/active-sessions")
     public ResponseEntity<ApiResponse<List<VisitorSessionResponse>>> getActiveSessions() {
         List<VisitorSession> activeSessions = sessionRepository.findByActiveTrue();
-
         List<VisitorSessionResponse> responses = activeSessions.stream()
                 .map(visitorService::convertToSessionResponse)
                 .collect(Collectors.toList());
-
         return ResponseEntity.ok(ApiResponse.success(responses, "Active sessions retrieved"));
     }
 
-    /**
-     * Get active sessions with additional location data
-     */
     @GetMapping("/active-sessions-with-location")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getActiveSessionsWithLocation() {
         List<VisitorSession> activeSessions = sessionRepository.findByActiveTrue();
-
         List<Map<String, Object>> responses = activeSessions.stream()
                 .map(session -> {
                     Map<String, Object> data = new HashMap<>();
@@ -249,7 +239,6 @@ public class AdminController {
                     data.put("sosTriggered", session.isSosTriggered());
                     data.put("hasEmergency", session.isHasEmergency());
 
-                    // Get last known location
                     LocationTracking lastLocation = locationTrackingRepository
                             .findTopBySessionOrderByTimestampDesc(session);
                     if (lastLocation != null) {
@@ -270,9 +259,6 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(responses, "Active sessions with location retrieved"));
     }
 
-    /**
-     * Get active session for a specific user by user ID
-     */
     @GetMapping("/active-session/user/{userId}")
     public ResponseEntity<ApiResponse<VisitorSessionResponse>> getActiveSessionByUserId(
             @PathVariable Long userId) {
@@ -325,10 +311,6 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(responses, "All bookings retrieved"));
     }
 
-    /**
-     * Get a specific booking by ID (for admin)
-     * Admin can view any booking regardless of ownership
-     */
     @GetMapping("/bookings/{bookingId}")
     public ResponseEntity<ApiResponse<BookingResponse>> getBookingById(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails adminDetails,
@@ -347,7 +329,6 @@ public class AdminController {
         User admin = userService.findByEmail(adminDetails.getUsername());
         Booking booking = bookingService.getBookingById(bookingId);
 
-        // Prevent confirming already confirmed bookings
         if ("PAID".equals(booking.getPaymentStatus()) ||
                 "CONFIRMED".equals(booking.getBookingStatus())) {
             return ResponseEntity.badRequest().body(
@@ -356,8 +337,6 @@ public class AdminController {
         }
 
         bookingService.confirmPayment(bookingId, paymentReference, "PAID");
-
-        // Log admin action
         log.info("Admin {} manually confirmed payment for booking {}", admin.getEmail(), bookingId);
 
         return ResponseEntity.ok(ApiResponse.success(null, "Payment confirmed, booking now confirmed"));
@@ -399,8 +378,6 @@ public class AdminController {
 
     // ========== BROADCAST MANAGEMENT ==========
 
-    // ========== BROADCAST MANAGEMENT ==========
-
     @PostMapping("/broadcast")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> broadcastNotification(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails adminDetails,
@@ -409,7 +386,6 @@ public class AdminController {
         List<Notification> notifications;
 
         if (request.getUserId() != null && request.getUserId() > 0) {
-            // Broadcast to specific user
             Notification notification = notificationService.broadcastToUser(
                     request.getUserId(),
                     request.getTitle(),
@@ -417,13 +393,11 @@ public class AdminController {
             );
             notifications = List.of(notification);
         } else if (request.getBroadcastType() == BroadcastRequest.BroadcastType.ACTIVE_VISITORS) {
-            // Broadcast only to visitors with active sessions
             notifications = notificationService.broadcastToActiveVisitors(
                     request.getTitle(),
                     request.getMessage()
             );
         } else {
-            // Broadcast to all users
             notifications = notificationService.broadcastToAllUsers(
                     request.getTitle(),
                     request.getMessage()
@@ -443,7 +417,6 @@ public class AdminController {
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails adminDetails,
             @Valid @RequestBody BroadcastRequest request) {
 
-        // Force broadcast type to ACTIVE_VISITORS
         List<Notification> notifications = notificationService.broadcastToActiveVisitors(
                 request.getTitle(),
                 request.getMessage()
@@ -458,6 +431,20 @@ public class AdminController {
                 : "Broadcast sent to " + responses.size() + " active visitors";
 
         return ResponseEntity.ok(ApiResponse.success(responses, message));
+    }
+
+    /**
+     * ✅ Get all broadcast notifications (admin only)
+     * Returns all broadcasts with full details including broadcast flag and reference IDs
+     */
+    @GetMapping("/broadcasts/all")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getAllBroadcasts(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails adminDetails) {
+
+        List<NotificationResponse> allBroadcasts = notificationService.getAllBroadcasts();
+
+        log.info("Admin {} retrieved all broadcasts. Total: {}", adminDetails.getUsername(), allBroadcasts.size());
+        return ResponseEntity.ok(ApiResponse.success(allBroadcasts, "All broadcasts retrieved successfully"));
     }
 
     private String getBroadcastMessage(BroadcastRequest request) {

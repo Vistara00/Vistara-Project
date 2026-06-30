@@ -10,6 +10,7 @@ import com.vistara.tourist_tracking_system.service.UserService;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/notifications")
 @RequiredArgsConstructor
@@ -79,20 +81,10 @@ public class NotificationController {
         List<Notification> notifications = notificationService.broadcastNotification(request);
 
         List<NotificationResponse> responses = notifications.stream()
-                .map(notification -> {
-                    NotificationResponse resp = new NotificationResponse();
-                    resp.setId(notification.getId());
-                    resp.setTitle(notification.getTitle());
-                    resp.setMessage(notification.getMessage());
-                    resp.setType(notification.getType());
-                    resp.setBroadcast(notification.isBroadcast());
-                    resp.setRead(notification.isRead());
-                    resp.setReferenceId(notification.getReferenceId());
-                    resp.setCreatedAt(notification.getCreatedAt());
-                    return resp;
-                })
+                .map(NotificationResponse::forAdmin)
                 .collect(Collectors.toList());
 
+        log.info("Admin {} broadcasted notification: {}", adminDetails.getUsername(), request.getTitle());
         return ResponseEntity.ok(ApiResponse.success(responses, "Broadcast sent successfully"));
     }
 
@@ -100,10 +92,45 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getMyBroadcasts(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
         User user = userService.findByEmail(userDetails.getUsername());
+
         List<NotificationResponse> broadcasts = notificationService.getUserNotifications(user)
                 .stream()
-                .filter(n -> n.isBroadcast())
+                .filter(NotificationResponse::isBroadcast)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(ApiResponse.success(broadcasts, "Your broadcasts retrieved"));
+    }
+
+    /**
+     * Get all ALERT type notifications (for the authenticated user)
+     * Shows all SOS alerts and emergency notifications
+     */
+    @GetMapping("/alerts")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getMyAlerts(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.findByEmail(userDetails.getUsername());
+
+        List<NotificationResponse> alerts = notificationService.getUserNotifications(user)
+                .stream()
+                .filter(n -> "ALERT".equals(n.getType()))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(ApiResponse.success(alerts, "Your alerts retrieved"));
+    }
+
+    /**
+     * Get unread ALERT type notifications count (for badge)
+     */
+    @GetMapping("/alerts/unread-count")
+    public ResponseEntity<ApiResponse<Long>> getUnreadAlertCount(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.findByEmail(userDetails.getUsername());
+
+        long count = notificationService.getUserNotifications(user)
+                .stream()
+                .filter(n -> "ALERT".equals(n.getType()) && !n.isRead())
+                .count();
+
+        return ResponseEntity.ok(ApiResponse.success(count, "Unread alerts count retrieved"));
     }
 }

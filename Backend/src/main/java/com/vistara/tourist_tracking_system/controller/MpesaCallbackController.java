@@ -33,7 +33,6 @@ public class MpesaCallbackController {
         Map<String, String> response = new HashMap<>();
 
         try {
-            // Parse the callback payload
             MpesaCallbackPayload payload = objectMapper.readValue(callbackJson, MpesaCallbackPayload.class);
 
             if (payload.getBody() == null || payload.getBody().getStkCallback() == null) {
@@ -57,13 +56,10 @@ public class MpesaCallbackController {
                 return ResponseEntity.badRequest().body(response);
             }
 
-            // Check if booking exists with this tracking ID
             Booking booking = bookingService.findByPaymentTrackingId(checkoutRequestId);
 
             if (booking == null) {
-                log.warn("No booking found for CheckoutRequestID: {}. It may have been created manually or the tracking ID wasn't stored.",
-                        checkoutRequestId);
-                // Still return success to M-Pesa to avoid retries
+                log.warn("No booking found for CheckoutRequestID: {}", checkoutRequestId);
                 response.put("ResultCode", "0");
                 response.put("ResultDesc", "Success");
                 return ResponseEntity.ok(response);
@@ -72,25 +68,26 @@ public class MpesaCallbackController {
             log.info("Found booking: ID={}, Reference={}, Current Status={}",
                     booking.getId(), booking.getBookingReference(), booking.getPaymentStatus());
 
-            if (resultCode == 0) {
-                // Payment successful - extract receipt number
+            if (resultCode != null && resultCode == 0) {
                 String receiptNo = null;
                 if (stkCallback.getCallbackMetadata() != null && stkCallback.getCallbackMetadata().getItem() != null) {
                     for (MpesaCallbackPayload.Item item : stkCallback.getCallbackMetadata().getItem()) {
                         String itemName = item.getName();
                         if ("MpesaReceiptNumber".equals(itemName)) {
-                            receiptNo = item.getValue() != null ? item.getValue().toString() : null;
+                            Object value = item.getValue();
+                            receiptNo = value != null ? value.toString() : null;
                             break;
                         }
                     }
                 }
 
+                // This will now send notifications via BookingService.updatePaymentStatus()
                 bookingService.updatePaymentStatus(checkoutRequestId, receiptNo, "PAID");
                 log.info("✅ Booking {} updated to PAID. Receipt: {}", booking.getId(), receiptNo);
             } else {
-                // Payment failed
+                String errorDesc = stkCallback.getResultDesc() != null ? stkCallback.getResultDesc() : "Unknown error";
                 bookingService.updatePaymentStatus(checkoutRequestId, null, "FAILED");
-                log.warn("❌ Payment failed for booking {}: {}", booking.getId(), stkCallback.getResultDesc());
+                log.warn("❌ Payment failed for booking {}: {}", booking.getId(), errorDesc);
             }
 
             response.put("ResultCode", "0");

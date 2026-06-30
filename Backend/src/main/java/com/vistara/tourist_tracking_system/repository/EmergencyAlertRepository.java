@@ -17,6 +17,9 @@ public interface EmergencyAlertRepository extends JpaRepository<EmergencyAlert, 
 
     List<EmergencyAlert> findByAlertStatusOrderByCreatedAtDesc(EmergencyAlert.AlertStatus alertStatus);
 
+    // Get all alerts ordered by creation date (descending)
+    List<EmergencyAlert> findAllByOrderByCreatedAtDesc();
+
     // Group by status and priority
     @Query("SELECT ea.alertStatus, ea.priority, COUNT(ea) FROM EmergencyAlert ea GROUP BY ea.alertStatus, ea.priority")
     List<Object[]> countByStatusAndPriority();

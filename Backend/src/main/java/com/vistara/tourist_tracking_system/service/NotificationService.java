@@ -41,6 +41,7 @@ public class NotificationService {
         notification.setRead(false);
 
         Notification saved = notificationRepository.save(notification);
+        log.info("📧 Notification created for user {}: {} - {}", user.getEmail(), type, title);
 
         // Send real-time notification via WebSocket
         sendWebSocketNotification(user, saved);
@@ -62,12 +63,10 @@ public class NotificationService {
         List<User> users;
 
         if (request.getUserId() != null) {
-            // Send to specific user
             User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
             users = List.of(user);
         } else {
-            // Broadcast to all users
             users = userRepository.findAll();
         }
 
@@ -81,7 +80,6 @@ public class NotificationService {
      */
     @Transactional
     public List<Notification> broadcastToActiveVisitors(String title, String message) {
-        // Get all active visitor sessions
         List<VisitorSession> activeSessions = sessionRepository.findByActiveTrue();
 
         if (activeSessions.isEmpty()) {
@@ -89,7 +87,6 @@ public class NotificationService {
             return new ArrayList<>();
         }
 
-        // Extract unique users from active sessions
         List<User> activeUsers = activeSessions.stream()
                 .map(VisitorSession::getUser)
                 .distinct()
@@ -97,16 +94,8 @@ public class NotificationService {
 
         log.info("Sending broadcast to {} active visitors", activeUsers.size());
 
-        // Send notification to each active user
         return activeUsers.stream()
-                .map(user -> createNotification(
-                        user,
-                        title,
-                        message,
-                        "BROADCAST",
-                        null,
-                        true
-                ))
+                .map(user -> createNotification(user, title, message, "BROADCAST", null, true))
                 .collect(Collectors.toList());
     }
 
@@ -138,11 +127,13 @@ public class NotificationService {
         return sessionRepository.countByActiveTrue();
     }
 
-    // Get notifications for the authenticated user
+    // ===== NOTIFICATION RETRIEVAL METHODS (USER-FACING) =====
+
+    // Get notifications for the authenticated user (user-facing - hides sensitive fields)
     public List<NotificationResponse> getUserNotifications(User user) {
         return notificationRepository.findByUserOrderByCreatedAtDesc(user)
                 .stream()
-                .map(this::convertToSecureResponse)
+                .map(NotificationResponse::forUser)  // User sees only safe fields
                 .collect(Collectors.toList());
     }
 
@@ -150,7 +141,7 @@ public class NotificationService {
     public List<NotificationResponse> getUnreadNotifications(User user) {
         return notificationRepository.findByUserAndReadFalseOrderByCreatedAtDesc(user)
                 .stream()
-                .map(this::convertToSecureResponse)
+                .map(NotificationResponse::forUser)
                 .collect(Collectors.toList());
     }
 
@@ -170,7 +161,7 @@ public class NotificationService {
         }
 
         notification.setRead(true);
-        return convertToSecureResponse(notificationRepository.save(notification));
+        return NotificationResponse.forUser(notificationRepository.save(notification));
     }
 
     // Mark all notifications as read for a user
@@ -179,46 +170,28 @@ public class NotificationService {
         notificationRepository.markAllAsRead(user);
     }
 
-    // Get all broadcast notifications (for admin)
+    // ===== ADMIN METHODS =====
+
+    // Get all broadcast notifications (admin-facing - shows all fields)
     public List<NotificationResponse> getAllBroadcasts() {
         return notificationRepository.findBroadcastNotifications()
                 .stream()
-                .map(this::convertToSecureResponse)
+                .map(NotificationResponse::forAdmin)  // Admin sees all fields
                 .collect(Collectors.toList());
     }
 
-    // WebSocket notification helper
+    // ===== WEBSOCKET HELPER =====
+
     private void sendWebSocketNotification(User user, Notification notification) {
         try {
             messagingTemplate.convertAndSendToUser(
                     user.getEmail(),
                     "/queue/notifications",
-                    convertToSecureResponse(notification)
+                    NotificationResponse.forUser(notification)
             );
             log.info("WebSocket notification sent to user: {}", user.getEmail());
         } catch (Exception e) {
             log.error("Failed to send WebSocket notification to user {}: {}", user.getEmail(), e.getMessage());
         }
-    }
-
-    /**
-     * Convert Notification to NotificationResponse with ONLY safe, non-confidential information
-     * Hides: referenceId (booking IDs, session IDs), broadcast flag (internal admin detail)
-     * Shows: title, message, type, read status, created time
-     */
-    private NotificationResponse convertToSecureResponse(Notification notification) {
-        NotificationResponse response = new NotificationResponse();
-        response.setId(notification.getId());
-        response.setTitle(notification.getTitle());
-        response.setMessage(notification.getMessage());
-        response.setType(notification.getType());
-        response.setRead(notification.isRead());
-        response.setCreatedAt(notification.getCreatedAt());
-
-        // DO NOT set referenceId (contains booking IDs, session IDs, etc.)
-        // DO NOT set broadcast flag (internal admin detail)
-        // These fields are intentionally omitted for security
-
-        return response;
     }
 }
