@@ -1,21 +1,33 @@
 package com.vistara.tourist_tracking_system.dto;
 
-import com.vistara.tourist_tracking_system.model.EmergencyAlert.AlertType;
-import lombok.Data;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class SOSAlertDTO {
-    @NotNull
-    private AlertType alertType;
+
+    @NotNull(message = "Session ID is required")
+    private Long sessionId;
+
+    @NotBlank(message = "Alert type is required")
+    private String alertType;
+
+    @NotNull(message = "Latitude is required")
+    private Double latitude;
+
+    @NotNull(message = "Longitude is required")
+    private Double longitude;
 
     private String message;
 
-    @NotNull
-    private Double latitude;
-
-    @NotNull
-    private Double longitude;
-
-    private Long sessionId;
+    // Optional fields for additional context
+    private Double accuracy;
+    private Double batteryLevel;
+    private String deviceInfo;
+    private String visitorNotes;
 }

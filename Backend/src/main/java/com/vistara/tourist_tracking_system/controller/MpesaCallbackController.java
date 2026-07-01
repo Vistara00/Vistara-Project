@@ -1,6 +1,8 @@
 package com.vistara.tourist_tracking_system.controller;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.vistara.tourist_tracking_system.dto.MpesaCallbackPayload;
 import com.vistara.tourist_tracking_system.model.Booking;
 import com.vistara.tourist_tracking_system.service.BookingService;
@@ -23,7 +25,6 @@ import java.util.Map;
 public class MpesaCallbackController {
 
     private final BookingService bookingService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostMapping("/stk-callback")
     public ResponseEntity<Map<String, String>> stkCallback(@RequestBody String callbackJson) {
@@ -33,8 +34,15 @@ public class MpesaCallbackController {
         Map<String, String> response = new HashMap<>();
 
         try {
+            // Create ObjectMapper with proper configuration
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            // Parse the callback payload
             MpesaCallbackPayload payload = objectMapper.readValue(callbackJson, MpesaCallbackPayload.class);
 
+            // Validate payload structure
             if (payload.getBody() == null || payload.getBody().getStkCallback() == null) {
                 log.error("Invalid callback payload structure");
                 response.put("ResultCode", "1");
@@ -46,9 +54,12 @@ public class MpesaCallbackController {
 
             String checkoutRequestId = stkCallback.getCheckoutRequestId();
             Integer resultCode = stkCallback.getResultCode();
+            String resultDesc = stkCallback.getResultDesc();
 
-            log.info("CheckoutRequestID: {}, ResultCode: {}", checkoutRequestId, resultCode);
+            log.info("CheckoutRequestID: {}, ResultCode: {}, ResultDesc: {}",
+                    checkoutRequestId, resultCode, resultDesc);
 
+            // Validate CheckoutRequestID
             if (checkoutRequestId == null || checkoutRequestId.isEmpty()) {
                 log.error("CheckoutRequestID is null or empty");
                 response.put("ResultCode", "1");
@@ -56,10 +67,12 @@ public class MpesaCallbackController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            // Find the booking by payment tracking ID
             Booking booking = bookingService.findByPaymentTrackingId(checkoutRequestId);
 
             if (booking == null) {
                 log.warn("No booking found for CheckoutRequestID: {}", checkoutRequestId);
+                // Return success to M-Pesa even if booking not found
                 response.put("ResultCode", "0");
                 response.put("ResultDesc", "Success");
                 return ResponseEntity.ok(response);
@@ -68,28 +81,51 @@ public class MpesaCallbackController {
             log.info("Found booking: ID={}, Reference={}, Current Status={}",
                     booking.getId(), booking.getBookingReference(), booking.getPaymentStatus());
 
+            // Check if payment was successful (ResultCode 0 = Success)
             if (resultCode != null && resultCode == 0) {
+                // Extract payment details from callback metadata
                 String receiptNo = null;
-                if (stkCallback.getCallbackMetadata() != null && stkCallback.getCallbackMetadata().getItem() != null) {
+                String phoneNumber = null;
+                Double amount = null;
+                String transactionDate = null;
+
+                if (stkCallback.getCallbackMetadata() != null
+                        && stkCallback.getCallbackMetadata().getItem() != null) {
+
                     for (MpesaCallbackPayload.Item item : stkCallback.getCallbackMetadata().getItem()) {
                         String itemName = item.getName();
+                        Object value = item.getValue();
+
+                        log.info("Metadata Item: {} = {}", itemName, value);
+
                         if ("MpesaReceiptNumber".equals(itemName)) {
-                            Object value = item.getValue();
                             receiptNo = value != null ? value.toString() : null;
-                            break;
+                        } else if ("PhoneNumber".equals(itemName)) {
+                            phoneNumber = value != null ? value.toString() : null;
+                        } else if ("Amount".equals(itemName)) {
+                            amount = value != null ? Double.valueOf(value.toString()) : null;
+                        } else if ("TransactionDate".equals(itemName)) {
+                            transactionDate = value != null ? value.toString() : null;
                         }
                     }
                 }
 
-                // This will now send notifications via BookingService.updatePaymentStatus()
+                // Update booking payment status to PAID
                 bookingService.updatePaymentStatus(checkoutRequestId, receiptNo, "PAID");
-                log.info("✅ Booking {} updated to PAID. Receipt: {}", booking.getId(), receiptNo);
+
+                log.info("✅ Payment successful for booking {}: Receipt={}, Amount={}, Phone={}",
+                        booking.getBookingReference(), receiptNo, amount, phoneNumber);
+
             } else {
-                String errorDesc = stkCallback.getResultDesc() != null ? stkCallback.getResultDesc() : "Unknown error";
+                // Payment failed
+                String errorDesc = resultDesc != null ? resultDesc : "Payment failed";
                 bookingService.updatePaymentStatus(checkoutRequestId, null, "FAILED");
-                log.warn("❌ Payment failed for booking {}: {}", booking.getId(), errorDesc);
+
+                log.warn("❌ Payment failed for booking {}: {} (ResultCode: {})",
+                        booking.getBookingReference(), errorDesc, resultCode);
             }
 
+            // Always return success to M-Pesa
             response.put("ResultCode", "0");
             response.put("ResultDesc", "Success");
 

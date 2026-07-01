@@ -17,7 +17,7 @@ public class EmergencyAlertResponse {
     private String visitorName;
     private String visitorPhone;
 
-    // NEW: Emergency contact details
+    // Emergency contact details
     private String emergencyContactName;
     private String emergencyContactPhone;
 

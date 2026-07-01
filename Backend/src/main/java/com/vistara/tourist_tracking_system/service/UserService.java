@@ -1,11 +1,10 @@
 package com.vistara.tourist_tracking_system.service;
 
+import com.vistara.tourist_tracking_system.dto.AdminUpdateUserRequest;
 import com.vistara.tourist_tracking_system.dto.RegisterRequest;
 import com.vistara.tourist_tracking_system.dto.UpdateProfileRequest;
 import com.vistara.tourist_tracking_system.dto.UserResponseDTO;
-import com.vistara.tourist_tracking_system.dto.AdminUpdateUserRequest;
 import com.vistara.tourist_tracking_system.exception.DuplicateResourceException;
-import com.vistara.tourist_tracking_system.model.Role;
 import com.vistara.tourist_tracking_system.model.User;
 import com.vistara.tourist_tracking_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +33,7 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
     }
 
-    public User registerUser(RegisterRequest request, Role role) {
+    public User registerUser(RegisterRequest request, User.Role role) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email already registered");
         }
@@ -70,7 +69,7 @@ public class UserService implements UserDetailsService {
         user.setFullName(fullName);
         user.setEmail(email);
         user.setPhoneNumber(phoneNumber);
-        user.setRole(Role.TOURIST);
+        user.setRole(User.Role.TOURIST);
         user.setActive(true);
         user.setVerified(true);
         String tempPassword = UUID.randomUUID().toString();
@@ -78,13 +77,11 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
-    // ===== NEW METHOD: Find or create tourist =====
     @Transactional
     public User findOrCreateTourist(String fullName, String email, String phoneNumber) {
         Optional<User> existingUser = userRepository.findByEmail(email);
         if (existingUser.isPresent()) {
             User user = existingUser.get();
-            // Update details if provided (optional)
             if (fullName != null && !fullName.isBlank()) {
                 user.setFullName(fullName);
             }
@@ -93,12 +90,11 @@ public class UserService implements UserDetailsService {
             }
             return userRepository.save(user);
         } else {
-            // Create new user
             User user = new User();
             user.setFullName(fullName);
             user.setEmail(email);
             user.setPhoneNumber(phoneNumber);
-            user.setRole(Role.TOURIST);
+            user.setRole(User.Role.TOURIST);
             user.setActive(true);
             user.setVerified(true);
             String tempPassword = UUID.randomUUID().toString();
@@ -107,7 +103,6 @@ public class UserService implements UserDetailsService {
         }
     }
 
-    // ===== PROFILE UPDATE METHODS =====
     @Transactional
     public UserResponseDTO updateProfile(String currentEmail, UpdateProfileRequest request) {
         User user = findByEmail(currentEmail);
@@ -180,5 +175,20 @@ public class UserService implements UserDetailsService {
         if (request.getVerified() != null) user.setVerified(request.getVerified());
 
         return convertToDTO(userRepository.save(user));
+    }
+
+    // ✅ NEW: Get all rangers
+    public List<User> getRangers() {
+        return userRepository.findByRole(User.Role.RANGER);
+    }
+
+    // ✅ NEW: Get all admins
+    public List<User> getAdmins() {
+        return userRepository.findByRole(User.Role.ADMIN);
+    }
+
+    // ✅ NEW: Get all tourists
+    public List<User> getTourists() {
+        return userRepository.findByRole(User.Role.TOURIST);
     }
 }

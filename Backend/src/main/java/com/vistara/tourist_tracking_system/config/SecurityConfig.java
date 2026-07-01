@@ -44,9 +44,9 @@ public class SecurityConfig {
                         .requestMatchers("/payments/mpesa/stk-callback").permitAll()
                         // M-Pesa STK Push initiation (authenticated)
                         .requestMatchers("/payments/mpesa/stkpush").authenticated()
-                        // Role-based access
+                        // Role-based access - ✅ Fix: Use RANGER instead of PARK_RANGER
                         .requestMatchers("/tourist/**").hasRole("TOURIST")
-                        .requestMatchers("/ranger/**").hasRole("PARK_RANGER")
+                        .requestMatchers("/ranger/**").hasRole("RANGER")  // ✅ Changed from PARK_RANGER to RANGER
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         // All other requests require authentication
                         .anyRequest().authenticated()

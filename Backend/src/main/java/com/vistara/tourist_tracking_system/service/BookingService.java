@@ -6,7 +6,6 @@ import com.vistara.tourist_tracking_system.dto.MpesaStkRequest;
 import com.vistara.tourist_tracking_system.dto.MpesaStkResponse;
 import com.vistara.tourist_tracking_system.model.Booking;
 import com.vistara.tourist_tracking_system.model.User;
-import com.vistara.tourist_tracking_system.model.Role;
 import com.vistara.tourist_tracking_system.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -73,11 +73,15 @@ public class BookingService {
         return saved;
     }
 
+    /**
+     * ✅ Generate a shorter booking reference compatible with M-Pesa
+     * Format: VST + YYMMDD + HHMM + 4-digit random (max 16 characters)
+     * Example: VST24070111569399
+     */
     private String generateBookingReference() {
-        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String timePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss"));
+        String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmm"));
         String randomPart = String.format("%04d", (int) (Math.random() * 10000));
-        return String.format("VST-%s-%s-%s", datePart, timePart, randomPart);
+        return String.format("VST%s%s", datePart, randomPart);
     }
 
     @Transactional
@@ -145,7 +149,7 @@ public class BookingService {
             throw new RuntimeException("Cannot delete booking – only pending bookings can be deleted");
         }
 
-        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        boolean isAdmin = currentUser.getRole() == User.Role.ADMIN;
         boolean isOwner = booking.getUser().getId().equals(currentUser.getId());
         if (!isAdmin && !isOwner) {
             throw new RuntimeException("You are not authorized to delete this booking");
@@ -256,9 +260,37 @@ public class BookingService {
         return booking;
     }
 
+    /**
+     * ✅ Find booking by reference with support for both full and partial matches
+     */
     public Booking findByBookingReference(String bookingReference) {
-        return bookingRepository.findByBookingReference(bookingReference)
+        if (bookingReference == null || bookingReference.isEmpty()) {
+            return null;
+        }
+
+        // Try exact match first
+        Optional<Booking> booking = bookingRepository.findByBookingReference(bookingReference);
+        if (booking.isPresent()) {
+            log.info("Found booking by exact reference: {}", bookingReference);
+            return booking.get();
+        }
+
+        // If not found, try to find by partial match (for truncated references)
+        log.info("No exact match for reference: {}. Trying partial match...", bookingReference);
+        List<Booking> allBookings = bookingRepository.findAll();
+        Booking partialMatch = allBookings.stream()
+                .filter(b -> b.getBookingReference().startsWith(bookingReference) ||
+                        b.getBookingReference().contains(bookingReference))
+                .findFirst()
                 .orElse(null);
+
+        if (partialMatch != null) {
+            log.info("Found booking by partial match: {} -> {}", bookingReference, partialMatch.getBookingReference());
+        } else {
+            log.warn("No booking found for reference: {}", bookingReference);
+        }
+
+        return partialMatch;
     }
 
     public Booking findByPaymentTrackingId(String paymentTrackingId) {

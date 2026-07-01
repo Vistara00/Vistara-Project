@@ -12,8 +12,8 @@ public class TouristTrackingSystemApplication {
 		SpringApplication.run(TouristTrackingSystemApplication.class, args);
         System.out.println("========================================");
         System.out.println("  VISTARA BACKEND SERVER STARTED!");
-        System.out.println("  API URL: http://localhost:8080/api/v1");
-        System.out.println("  WebSocket: ws://localhost:8080/ws");
+        System.out.println("  API URL: http://localhost:8087/api/v1");
+        System.out.println("  WebSocket: ws://localhost:8087/ws");
         System.out.println("========================================");
 	}
 

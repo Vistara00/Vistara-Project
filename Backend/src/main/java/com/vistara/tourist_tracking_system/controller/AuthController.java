@@ -1,8 +1,9 @@
 package com.vistara.tourist_tracking_system.controller;
 
 import com.vistara.tourist_tracking_system.dto.*;
-import com.vistara.tourist_tracking_system.model.Role;
-import com.vistara.tourist_tracking_system.model.User;
+// ❌ Remove this import
+// import com.vistara.tourist_tracking_system.model.Role;
+import com.vistara.tourist_tracking_system.model.User;  // ✅ This contains User.Role
 import com.vistara.tourist_tracking_system.service.JwtService;
 import com.vistara.tourist_tracking_system.service.PasswordResetService;
 import com.vistara.tourist_tracking_system.service.UserService;
@@ -32,7 +33,8 @@ public class AuthController {
     @PostMapping("/register/tourist")
     public ResponseEntity<ApiResponse<?>> registerTourist(@Valid @RequestBody RegisterRequest request) {
         try {
-            User user = userService.registerUser(request, Role.TOURIST);
+            // ✅ Fix: Use User.Role.TOURIST instead of Role.TOURIST
+            User user = userService.registerUser(request, User.Role.TOURIST);
             Map<String, Object> response = new HashMap<>();
             response.put("user", user);
             response.put("message", "Tourist registered successfully");
@@ -65,33 +67,6 @@ public class AuthController {
         }
     }
 
-//    @PostMapping("/forgot-password")
-//    public ResponseEntity<ApiResponse<?>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-//        try {
-//            // This method will send an email with a 6-digit token
-//            // It returns the token only for testing – remove in production
-//            String token = passwordResetService.generateResetToken(request.getEmail());
-//
-//            // For production, do NOT return the token in response
-//            // Only return success message
-//            // For debugging, you can keep token but remove before deployment
-//            Map<String, Object> response = new HashMap<>();
-//            // ⚠️ Remove this line in production – token should be email-only
-//            response.put("resetToken", token);
-//            response.put("expiresInMinutes", 15);
-//
-//            log.info("Password reset token generated for email: {}", request.getEmail());
-//            return ResponseEntity.ok(ApiResponse.success(response,
-//                    "If that email exists, a reset link has been sent."));
-//        } catch (Exception e) {
-//            // Log the actual error for debugging (don't expose to client)
-//            log.error("Password reset request failed for {}: {}", request.getEmail(), e.getMessage());
-//            // Still return 200 to avoid user enumeration
-//            return ResponseEntity.ok(ApiResponse.success(null,
-//                    "If that email exists, a reset link has been sent."));
-//        }
-//    }
-
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<?>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         try {
@@ -110,6 +85,37 @@ public class AuthController {
             return ResponseEntity.ok(ApiResponse.success(null, "Password reset successfully"));
         } catch (Exception e) {
             log.error("Password reset failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+
+    // Admin Registration Endpoint
+    @PostMapping("/register/admin")
+    public ResponseEntity<ApiResponse<?>> registerAdmin(@Valid @RequestBody RegisterRequest request) {
+        try {
+            // Only allow admin registration if you have a secret key or specific condition
+            User user = userService.registerUser(request, User.Role.ADMIN);
+            Map<String, Object> response = new HashMap<>();
+            response.put("user", user);
+            response.put("message", "Admin registered successfully");
+            return ResponseEntity.ok(ApiResponse.success(response, "Registration successful"));
+        } catch (Exception e) {
+            log.error("Admin registration failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/register/ranger")
+    public ResponseEntity<ApiResponse<?>> registerRanger(@Valid @RequestBody RegisterRequest request) {
+        try {
+            User user = userService.registerUser(request, User.Role.RANGER);
+            Map<String, Object> response = new HashMap<>();
+            response.put("user", user);
+            response.put("message", "Ranger registered successfully");
+            return ResponseEntity.ok(ApiResponse.success(response, "Registration successful"));
+        } catch (Exception e) {
+            log.error("Ranger registration failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }

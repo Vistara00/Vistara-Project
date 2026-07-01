@@ -38,17 +38,10 @@ public class User implements UserDetails {
     @Column(name = "national_id", unique = true)
     private String nationalId;
 
-    // FIX: added columnDefinition = "user_role" — role is a PostgreSQL custom
-    // ENUM type in the DB. Without this Hibernate sends VARCHAR and PostgreSQL
-    // rejects the comparison with "operator does not exist: user_role = character varying"
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, columnDefinition = "user_role")
+    @Column(name = "role", nullable = false)
     private Role role;
 
-    // FIX: renamed from isActive to active — Lombok @Data generates isActive()
-    // for a boolean field named "isActive", which Hibernate strips the "is"
-    // prefix from and maps to a column called "active" instead of "is_active".
-    // Using field name "active" with @Column(name = "is_active") fixes this.
     @Column(name = "is_active")
     private boolean active = true;
 
@@ -70,8 +63,6 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // FIX: deleted_at exists in the DB schema (V1) — mapped here so Hibernate
-    // schema validation doesn't fail on an unmapped column
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
@@ -87,12 +78,6 @@ public class User implements UserDetails {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    // UserDetails methods
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override
@@ -115,11 +100,44 @@ public class User implements UserDetails {
         return true;
     }
 
-    // FIX: was return isActive — field renamed to active, so this must
-    // return active to match. Lombok also generates isActive() from the
-    // field name active, so UserDetails.isEnabled() works correctly.
     @Override
     public boolean isEnabled() {
         return active;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Convert the enum to the correct Spring Security role format
+        String roleName = getRoleForSecurity();
+        return List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
+    }
+
+    /**
+     * Returns the role name as stored in the database for security
+     * This maps the enum to the database value
+     */
+    private String getRoleForSecurity() {
+        // If role is null, default to TOURIST
+        if (role == null) {
+            return "TOURIST";
+        }
+
+        // Map the enum to the database value
+        switch (role) {
+            case ADMIN:
+                return "ADMIN";
+            case RANGER:
+                return "PARK_RANGER";  // Database stores "PARK_RANGER"
+            case TOURIST:
+                return "TOURIST";
+            default:
+                return role.name();
+        }
+    }
+
+    public enum Role {
+        ADMIN,
+        RANGER,      // Stored as "PARK_RANGER" in the database
+        TOURIST
     }
 }

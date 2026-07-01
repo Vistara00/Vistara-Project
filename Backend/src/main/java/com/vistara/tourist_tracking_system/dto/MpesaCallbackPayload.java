@@ -9,16 +9,19 @@ import java.util.List;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MpesaCallbackPayload {
+
     @JsonProperty("Body")
     private Body body;
 
-    @lombok.Data
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Body {
         @JsonProperty("stkCallback")
         private StkCallback stkCallback;
     }
 
-    @lombok.Data
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class StkCallback {
         @JsonProperty("MerchantRequestID")
         private String merchantRequestId;
@@ -36,27 +39,20 @@ public class MpesaCallbackPayload {
         private CallbackMetadata callbackMetadata;
     }
 
-    @lombok.Data
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class CallbackMetadata {
         @JsonProperty("Item")
         private List<Item> item;
     }
 
-    @lombok.Data
+    @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Item {
-        // M-Pesa sends with capital letters: "Name", "Value"
         @JsonProperty("Name")
         private String name;
 
         @JsonProperty("Value")
         private Object value;
-
-        // Also support lowercase if needed
-        @JsonProperty("name")
-        private String nameLower;
-
-        @JsonProperty("value")
-        private Object valueLower;
     }
 }

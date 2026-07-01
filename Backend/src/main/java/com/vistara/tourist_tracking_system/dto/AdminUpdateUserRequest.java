@@ -2,9 +2,13 @@ package com.vistara.tourist_tracking_system.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class AdminUpdateUserRequest {
     private String fullName;
     @Email private String email;

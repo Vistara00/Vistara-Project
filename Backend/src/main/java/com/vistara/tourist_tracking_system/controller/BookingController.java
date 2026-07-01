@@ -3,6 +3,7 @@ package com.vistara.tourist_tracking_system.controller;
 import com.vistara.tourist_tracking_system.dto.ApiResponse;
 import com.vistara.tourist_tracking_system.dto.BookingRequest;
 import com.vistara.tourist_tracking_system.dto.BookingResponse;
+import com.vistara.tourist_tracking_system.dto.PaymentStatusResponse;
 import com.vistara.tourist_tracking_system.model.Booking;
 import com.vistara.tourist_tracking_system.model.User;
 import com.vistara.tourist_tracking_system.service.BookingService;
@@ -59,6 +60,53 @@ public class BookingController {
         Booking booking = bookingService.getBookingByIdAndUser(bookingId, user);
         BookingResponse response = convertToResponse(booking);
         return ResponseEntity.ok(ApiResponse.success(response, "Booking retrieved successfully"));
+    }
+
+    /**
+     * ✅ Get only the payment status of a booking
+     * Returns just the payment status field
+     */
+    @GetMapping("/{bookingId}/payment-status")
+    public ResponseEntity<ApiResponse<PaymentStatusResponse>> getPaymentStatus(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long bookingId) {
+        User user = userService.findByEmail(userDetails.getUsername());
+        Booking booking = bookingService.getBookingByIdAndUser(bookingId, user);
+
+        PaymentStatusResponse response = new PaymentStatusResponse();
+        response.setBookingId(booking.getId());
+//        response.setBookingReference(booking.getBookingReference());
+        response.setPaymentStatus(booking.getPaymentStatus());
+//        response.setBookingStatus(booking.getBookingStatus());
+//        response.setPaymentReference(booking.getPaymentReference());
+//        response.setAmount(booking.getAmount());
+
+        return ResponseEntity.ok(ApiResponse.success(response, "Payment status retrieved"));
+    }
+
+    /**
+     * ✅ Get payment status by booking reference (public, no auth required)
+     * Useful for checking payment status without authentication
+     */
+    @GetMapping("/payment-status/{bookingReference}")
+    public ResponseEntity<ApiResponse<PaymentStatusResponse>> getPaymentStatusByReference(
+            @PathVariable String bookingReference) {
+        Booking booking = bookingService.findByBookingReference(bookingReference);
+
+        if (booking == null) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Booking not found with reference: " + bookingReference));
+        }
+
+        PaymentStatusResponse response = new PaymentStatusResponse();
+        response.setBookingId(booking.getId());
+//        response.setBookingReference(booking.getBookingReference());
+        response.setPaymentStatus(booking.getPaymentStatus());
+//        response.setBookingStatus(booking.getBookingStatus());
+//        response.setPaymentReference(booking.getPaymentReference());
+//        response.setAmount(booking.getAmount());
+
+        return ResponseEntity.ok(ApiResponse.success(response, "Payment status retrieved"));
     }
 
     @PostMapping("/{bookingId}/cancel")

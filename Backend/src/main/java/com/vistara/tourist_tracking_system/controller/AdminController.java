@@ -165,7 +165,8 @@ public class AdminController {
     @PutMapping("/resolve-alert/{alertId}")
     public ResponseEntity<ApiResponse<EmergencyAlertResponse>> resolveAlert(
             @PathVariable Long alertId,
-            @RequestParam String notes) {
+            @RequestBody Map<String, String> request) {
+        String notes = request.get("notes");
         EmergencyAlertResponse alert = emergencyService.resolveAlert(alertId, notes);
         return ResponseEntity.ok(ApiResponse.success(alert, "Alert resolved"));
     }
