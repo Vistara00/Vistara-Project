@@ -1,88 +1,148 @@
 <!-- src/app/pages/dashboard/dashboard-home.html -->
 <div class="dashboard-home">
-  <!-- Summary cards -->
+  <!-- Executive Overview Header -->
+  <div class="header">
+    <h2>Executive Overview</h2>
+    <p>Real-time park management dashboard</p>
+  </div>
+
+  <!-- Summary Cards - Row 1 -->
   <div class="summary-cards">
-    <!-- Total Visitors -->
+    <!-- Active Visitors -->
     <div class="summary-card visitors">
       <div class="icon-circle green">
         <i class="fas fa-users"></i>
       </div>
       <div class="card-content">
-        <p class="label">Daily Visitors</p>
+        <p class="label">Active Visitors</p>
         <h3>{{ totalVisitorsToday }}</h3>
         <span class="trend up">Live</span>
       </div>
     </div>
 
-    <!-- SOS Alerts -->
+    <!-- Today's Check-ins -->
+    <div class="summary-card checkins">
+      <div class="icon-circle blue">
+        <i class="fas fa-sign-in-alt"></i>
+      </div>
+      <div class="card-content">
+        <p class="label">Today's Check-ins</p>
+        <h3>{{ todayCheckins }}</h3>
+        <span class="trend up">+{{ todayCheckins }}</span>
+      </div>
+    </div>
+
+    <!-- Today's Check-outs -->
+    <div class="summary-card checkouts">
+      <div class="icon-circle orange">
+        <i class="fas fa-sign-out-alt"></i>
+      </div>
+      <div class="card-content">
+        <p class="label">Today's Check-outs</p>
+        <h3>{{ todayCheckouts }}</h3>
+        <span class="trend down">{{ todayCheckouts > 0 ? '-' + todayCheckouts : 0 }}</span>
+      </div>
+    </div>
+
+    <!-- Total Users -->
+    <div class="summary-card users">
+      <div class="icon-circle purple">
+        <i class="fas fa-user-friends"></i>
+      </div>
+      <div class="card-content">
+        <p class="label">Total Users</p>
+        <h3>{{ totalUsers }}</h3>
+        <span class="trend">Registered</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Cards - Row 2 -->
+  <div class="summary-cards">
+    <!-- Active Alerts -->
     <div class="summary-card alerts">
       <div class="icon-circle red">
         <i class="fas fa-exclamation-triangle"></i>
       </div>
       <div class="card-content">
-        <p class="label">SOS Alerts</p>
+        <p class="label">Active Alerts</p>
         <h3>{{ activeAlerts }}</h3>
-        <span class="priority">{{ alertPriority || '—' }}</span>
-        <small class="status">{{ alertStatus || '' }}</small>
+        <span class="priority">Pending: {{ pendingAlerts }}</span>
+      </div>
+    </div>
+
+    <!-- Resolved Alerts -->
+    <div class="summary-card resolved">
+      <div class="icon-circle green">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="card-content">
+        <p class="label">Resolved Alerts</p>
+        <h3>{{ resolvedAlerts }}</h3>
+        <span class="trend up">Closed</span>
       </div>
     </div>
 
     <!-- Park Occupancy -->
     <div class="summary-card occupancy">
-      <div class="icon-circle blue">
+      <div class="icon-circle gold">
         <i class="fas fa-chart-pie"></i>
       </div>
       <div class="card-content">
         <p class="label">Park Occupancy</p>
         <h3>{{ parkOccupancy }}%</h3>
-        <span class="capacity">Capacity: 5k</span>
+        <span class="capacity">{{ totalVisitorsToday }}/5,000</span>
       </div>
     </div>
 
     <!-- Daily Revenue -->
-    <div class="summary-card booking">
+    <div class="summary-card revenue">
       <div class="icon-circle gold">
         <i class="fas fa-dollar-sign"></i>
       </div>
       <div class="card-content">
         <p class="label">Daily Revenue</p>
-        <h3>KES: {{ dailyBookingValue | number:'1.0-0' }}</h3>
+        <h3>KES {{ dailyBookingValue | number:'1.0-0' }}</h3>
         <span class="trend up">Updated</span>
       </div>
     </div>
   </div>
 
-  <!-- Main content grid -->
+  <!-- Main grid -->
   <div class="main-grid">
     <!-- Left column -->
     <div class="left-column">
       <!-- Visitor Flow Chart -->
       <div class="chart-card">
         <h4>Visitor Trend</h4>
-        <p>Daily visitor trend overview</p>
-
-        <div class="date-range">
-          <div class="date-field">
-            <label for="startDate">From:</label>
-            <input id="startDate" type="date" [(ngModel)]="startDate" (change)="updateVisitorTrend()" />
-          </div>
-          <div class="date-field">
-            <label for="endDate">To:</label>
-            <input id="endDate" type="date" [(ngModel)]="endDate" (change)="updateVisitorTrend()" />
-          </div>
+        <p>Daily visitor trend for current month</p>
+        <div class="chart-container">
+          <canvas #visitorTrendChart></canvas>
         </div>
-
-        <canvas #visitorTrendChart width="400" height="200"></canvas>
       </div>
 
+      <!-- Revenue Chart -->
+      <div class="chart-card">
+        <h4>Revenue Trend</h4>
+        <p>Daily revenue trend for current month</p>
+        <div class="chart-container">
+          <canvas #revenueChart></canvas>
+        </div>
+      </div>
 
-
-
-      <!-- Live Visitor Distribution Map -->
-      <div class="map-card">
-        <h4>Live Distribution</h4>
-        <div class="map-placeholder">
-          <p>Map showing visitor distribution will appear here.</p>
+      <!-- Weekly Attendance -->
+      <div class="chart-card" *ngIf="weeklyAttendance.length > 0">
+        <h4>Weekly Attendance</h4>
+        <p>Visitor attendance by week</p>
+        <div class="weekly-stats">
+          <div *ngFor="let week of weeklyAttendance" class="week-item">
+            <span class="week-label">Week {{ week.week }}</span>
+            <div class="week-bar-container">
+              <div class="week-bar" [style.width.%]="(week.count / getMaxWeeklyCount()) * 100">
+                <span class="week-count">{{ week.count }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -100,11 +160,26 @@
         </div>
       </div>
 
+      <!-- Alert Status Breakdown -->
+      <div class="alert-breakdown-card">
+        <h4>Alert Status</h4>
+        <div class="alert-breakdown">
+          <div *ngFor="let alert of alertStatuses" class="alert-status-item">
+            <span class="alert-status-label">{{ alert.status }}</span>
+            <div class="alert-bar-container">
+              <div class="alert-bar" [style.width.%]="(alert.count / getMaxAlertCount()) * 100">
+                <span class="alert-count">{{ alert.count }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Quick Actions -->
       <div class="actions-card">
         <h4>Quick Actions</h4>
         <div class="actions">
-          <button *ngFor="let action of quickActions" [ngClass]="action.color">
+          <button *ngFor="let action of quickActions" [ngClass]="action.color" (click)="onQuickAction(action.action)">
             <i class="fas" [ngClass]="action.icon"></i> {{ action.label }}
           </button>
         </div>
