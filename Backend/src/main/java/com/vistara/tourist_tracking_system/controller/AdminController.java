@@ -65,9 +65,12 @@ public class AdminController {
     // ========== VISITOR MONITORING ==========
 
     @GetMapping("/active-visitors")
-    public ResponseEntity<ApiResponse<List<VisitorSession>>> getActiveVisitors() {
+    public ResponseEntity<ApiResponse<List<ActiveVisitorResponse>>> getActiveVisitors() {
         List<VisitorSession> activeSessions = sessionRepository.findByActiveTrue();
-        return ResponseEntity.ok(ApiResponse.success(activeSessions, "Active visitors retrieved"));
+        List<ActiveVisitorResponse> responses = activeSessions.stream()
+                .map(this::convertToActiveVisitorResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success(responses, "Active visitors retrieved"));
     }
 
     @GetMapping("/dashboard/stats")
@@ -150,7 +153,26 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(details, "Visitor tracking details retrieved"));
     }
 
-    // ========== EMERGENCY MANAGEMENT ==========
+    // ========== RANGER MANAGEMENT ==========
+
+    @GetMapping("/rangers")
+    public ResponseEntity<ApiResponse<List<UserResponseDTO>>> getAllRangers() {
+        List<UserResponseDTO> rangers = userService.getAllRangers();
+        return ResponseEntity.ok(ApiResponse.success(rangers, "All rangers retrieved successfully"));
+    }
+
+    @GetMapping("/rangers/available")
+    public ResponseEntity<ApiResponse<List<UserResponseDTO>>> getAvailableRangers() {
+        List<UserResponseDTO> availableRangers = userService.getAvailableRangers();
+        return ResponseEntity.ok(ApiResponse.success(availableRangers, "Available rangers retrieved successfully"));
+    }
+
+    @GetMapping("/rangers/{rangerId}")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> getRangerById(
+            @PathVariable Long rangerId) {
+        UserResponseDTO ranger = userService.getUserById(rangerId);
+        return ResponseEntity.ok(ApiResponse.success(ranger, "Ranger retrieved successfully"));
+    }
 
     @PutMapping("/assign-ranger/{alertId}/{rangerId}")
     public ResponseEntity<ApiResponse<EmergencyAlertResponse>> assignRanger(
@@ -169,6 +191,28 @@ public class AdminController {
         String notes = request.get("notes");
         EmergencyAlertResponse alert = emergencyService.resolveAlert(alertId, notes);
         return ResponseEntity.ok(ApiResponse.success(alert, "Alert resolved"));
+    }
+
+    @GetMapping("/alerts/active")
+    public ResponseEntity<ApiResponse<List<EmergencyAlertResponse>>> getActiveAlerts() {
+        List<EmergencyAlertResponse> alerts = emergencyService.getActiveAlerts();
+        return ResponseEntity.ok(ApiResponse.success(alerts, "Active alerts retrieved"));
+    }
+
+    @GetMapping("/alerts")
+    public ResponseEntity<ApiResponse<List<EmergencyAlertResponse>>> getAlerts(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) LocalDateTime from,
+            @RequestParam(required = false) LocalDateTime to) {
+        List<EmergencyAlertResponse> alerts = emergencyService.getAlerts(status, from, to);
+        return ResponseEntity.ok(ApiResponse.success(alerts, "Alerts retrieved"));
+    }
+
+    @GetMapping("/rangers/{rangerId}/alerts")
+    public ResponseEntity<ApiResponse<List<EmergencyAlertResponse>>> getRangerAlerts(
+            @PathVariable Long rangerId) {
+        List<EmergencyAlertResponse> alerts = emergencyService.getAlertsByRanger(rangerId);
+        return ResponseEntity.ok(ApiResponse.success(alerts, "Ranger alerts retrieved"));
     }
 
     // ========== CHECK-IN / CHECK-OUT ==========
@@ -434,10 +478,6 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(responses, message));
     }
 
-    /**
-     * ✅ Get all broadcast notifications (admin only)
-     * Returns all broadcasts with full details including broadcast flag and reference IDs
-     */
     @GetMapping("/broadcasts/all")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getAllBroadcasts(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails adminDetails) {
@@ -448,6 +488,8 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(allBroadcasts, "All broadcasts retrieved successfully"));
     }
 
+    // ========== PRIVATE HELPERS ==========
+
     private String getBroadcastMessage(BroadcastRequest request) {
         if (request.getUserId() != null && request.getUserId() > 0) {
             return "Broadcast sent to user successfully";
@@ -457,8 +499,6 @@ public class AdminController {
         }
         return "Broadcast sent to all users successfully";
     }
-
-    // ========== PRIVATE HELPERS ==========
 
     private BookingResponse convertToResponse(Booking booking) {
         BookingResponse response = new BookingResponse();
@@ -489,7 +529,27 @@ public class AdminController {
         response.setType(notification.getType());
         response.setRead(notification.isRead());
         response.setCreatedAt(notification.getCreatedAt());
-        // broadcast and referenceId are intentionally omitted for security
         return response;
+    }
+
+    private ActiveVisitorResponse convertToActiveVisitorResponse(VisitorSession session) {
+        Booking booking = session.getBooking();
+        return ActiveVisitorResponse.builder()
+                .id(session.getId())
+                .bookingReference(booking != null ? booking.getBookingReference() : null)
+                .userFullName(session.getUser().getFullName())
+                .userEmail(session.getUser().getEmail())
+                .userPhoneNumber(session.getUser().getPhoneNumber())
+                .amount(booking != null ? booking.getAmount() : null)
+                .checkInDate(booking != null ? booking.getCheckInDate() : null)
+                .checkOutDate(booking != null ? booking.getCheckOutDate() : null)
+                .bookingStatus(booking != null ? booking.getBookingStatus() : null)
+                .vehicleRegistration(session.getVehicleRegistration())
+                .groupSize(session.getGroupSize())
+                .checkInTime(session.getCheckInTime())
+                .sosTriggered(session.isSosTriggered())
+                .hasEmergency(session.isHasEmergency())
+                .notes(session.getNotes())
+                .build();
     }
 }

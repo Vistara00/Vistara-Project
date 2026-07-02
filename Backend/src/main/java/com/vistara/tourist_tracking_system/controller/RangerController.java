@@ -52,7 +52,7 @@ public class RangerController {
     public ResponseEntity<ApiResponse<List<EmergencyAlertResponse>>> getAssignedAlerts(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
         User ranger = userService.findByEmail(userDetails.getUsername());
-        List<EmergencyAlertResponse> alerts = emergencyService.getAlertsByRanger(ranger);
+        List<EmergencyAlertResponse> alerts = emergencyService.getAlertsByRanger(ranger); // Fixed: passes User object
         log.info("Ranger {} retrieved {} assigned alerts", ranger.getEmail(), alerts.size());
         return ResponseEntity.ok(ApiResponse.success(alerts, "Assigned alerts retrieved successfully"));
     }
@@ -200,10 +200,6 @@ public class RangerController {
 
     // ===== NOTIFICATION ENDPOINTS FOR RANGERS =====
 
-    /**
-     * ✅ Get all notifications for the authenticated ranger
-     * Shows all notifications including alert assignments, status changes, etc.
-     */
     @GetMapping("/notifications")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getRangerNotifications(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
@@ -213,9 +209,6 @@ public class RangerController {
         return ResponseEntity.ok(ApiResponse.success(notifications, "Notifications retrieved successfully"));
     }
 
-    /**
-     * ✅ Get unread notifications for the authenticated ranger
-     */
     @GetMapping("/notifications/unread")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getUnreadNotifications(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
@@ -225,9 +218,6 @@ public class RangerController {
         return ResponseEntity.ok(ApiResponse.success(notifications, "Unread notifications retrieved successfully"));
     }
 
-    /**
-     * ✅ Get unread notification count for the authenticated ranger
-     */
     @GetMapping("/notifications/unread-count")
     public ResponseEntity<ApiResponse<Long>> getUnreadCount(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
@@ -237,10 +227,6 @@ public class RangerController {
         return ResponseEntity.ok(ApiResponse.success(count, "Unread count retrieved"));
     }
 
-    /**
-     * ✅ Get alert-type notifications only for the ranger
-     * Shows all notifications related to alerts (new, assigned, responding, resolved, false alarm)
-     */
     @GetMapping("/notifications/alerts")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getAlertNotifications(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
@@ -255,10 +241,6 @@ public class RangerController {
         return ResponseEntity.ok(ApiResponse.success(alertNotifications, "Alert notifications retrieved successfully"));
     }
 
-    /**
-     * ✅ Get notifications grouped by type for the ranger
-     * Returns counts by notification type (ALERT_NEW, ALERT_ASSIGNED, ALERT_RESPONDING, etc.)
-     */
     @GetMapping("/notifications/stats")
     public ResponseEntity<ApiResponse<Map<String, Long>>> getNotificationStats(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
@@ -276,9 +258,6 @@ public class RangerController {
         return ResponseEntity.ok(ApiResponse.success(stats, "Notification statistics retrieved"));
     }
 
-    /**
-     * ✅ Mark a notification as read
-     */
     @PutMapping("/notifications/{notificationId}/read")
     public ResponseEntity<ApiResponse<NotificationResponse>> markNotificationAsRead(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
@@ -289,9 +268,6 @@ public class RangerController {
         return ResponseEntity.ok(ApiResponse.success(notification, "Notification marked as read"));
     }
 
-    /**
-     * ✅ Mark all notifications as read for the ranger
-     */
     @PutMapping("/notifications/read-all")
     public ResponseEntity<ApiResponse<Void>> markAllAsRead(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
@@ -301,9 +277,6 @@ public class RangerController {
         return ResponseEntity.ok(ApiResponse.success(null, "All notifications marked as read"));
     }
 
-    /**
-     * ✅ Get recent notifications (last 24 hours)
-     */
     @GetMapping("/notifications/recent")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getRecentNotifications(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {

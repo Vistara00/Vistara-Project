@@ -26,6 +26,7 @@ public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmergencyService emergencyService;  // Added this
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -58,6 +59,11 @@ public class UserService implements UserDetailsService {
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new DuplicateResourceException("User not found"));
+    }
+
+    public User findById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
 
     @Transactional
@@ -136,7 +142,8 @@ public class UserService implements UserDetailsService {
         dto.setEmail(user.getEmail());
         dto.setFullName(user.getFullName());
         dto.setPhoneNumber(user.getPhoneNumber());
-        dto.setRole(user.getRole().name());
+        dto.setRole(user.getRole());
+        dto.setNationalId(user.getNationalId());
         dto.setEmergencyContactName(user.getEmergencyContactName());
         dto.setEmergencyContactPhone(user.getEmergencyContactPhone());
         dto.setActive(user.isActive());
@@ -153,6 +160,11 @@ public class UserService implements UserDetailsService {
 
     public UserResponseDTO getUserProfile(String email) {
         User user = findByEmail(email);
+        return convertToDTO(user);
+    }
+
+    public UserResponseDTO getUserById(Long userId) {
+        User user = findById(userId);
         return convertToDTO(user);
     }
 
@@ -177,18 +189,33 @@ public class UserService implements UserDetailsService {
         return convertToDTO(userRepository.save(user));
     }
 
-    // ✅ NEW: Get all rangers
+    // Ranger Management Methods
     public List<User> getRangers() {
         return userRepository.findByRole(User.Role.RANGER);
     }
 
-    // ✅ NEW: Get all admins
     public List<User> getAdmins() {
         return userRepository.findByRole(User.Role.ADMIN);
     }
 
-    // ✅ NEW: Get all tourists
     public List<User> getTourists() {
         return userRepository.findByRole(User.Role.TOURIST);
+    }
+
+    public List<UserResponseDTO> getAllRangers() {
+        List<User> rangers = userRepository.findByRole(User.Role.RANGER);
+        return rangers.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<UserResponseDTO> getAvailableRangers() {
+        List<User> rangers = userRepository.findByRole(User.Role.RANGER);
+        List<User> availableRangers = rangers.stream()
+                .filter(ranger -> !emergencyService.hasActiveAlertAssigned(ranger.getId()))
+                .collect(Collectors.toList());
+        return availableRangers.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }
