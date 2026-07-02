@@ -4,8 +4,8 @@
     <!-- Header -->
     <div class="checkins-header">
       <div>
-        <h2>Check‑ins & Check‑outs</h2>
-        <p>Monitor real‑time visitor movement and park occupancy.</p>
+        <h2>Check‑ins</h2>
+        <p>Visitors who have paid and are awaiting arrival.</p>
       </div>
     </div>
 
@@ -16,8 +16,8 @@
           <i class="fas fa-users"></i>
         </div>
         <div class="card-content">
-          <p class="label">TOTAL VISITORS IN</p>
-          <h3>{{ totalVisitors }}</h3>
+          <p class="label">AWAITING CHECK‑IN</p>
+          <h3>{{ totalPending }}</h3>
         </div>
       </div>
 
@@ -33,30 +33,36 @@
 
       <div class="summary-card checkouts">
         <div class="icon-circle red">
-          <i class="fas fa-arrow-right"></i>
+          <i class="fas fa-exclamation-circle"></i>
         </div>
         <div class="card-content">
-          <p class="label">EXPECTED CHECK‑OUTS</p>
-          <h3>{{ expectedCheckouts }}</h3>
+          <p class="label">OVERDUE CHECK‑INS</p>
+          <h3>{{ overdueCheckins }}</h3>
         </div>
       </div>
     </div>
 
     <!-- Filters -->
     <div class="filters">
-      <input type="text" placeholder="Search by name or ID..." [(ngModel)]="searchQuery" />
-      <select [(ngModel)]="statusFilter">
-        <option>All Status</option>
-        <option>Checked In</option>
-        <option>Checked Out</option>
-        <option>Scheduled</option>
-      </select>
-      <button class="filter-btn"><i class="fas fa-filter"></i></button>
+      <input type="text" placeholder="Search by name or booking ID..." [(ngModel)]="searchQuery" />
+      <button class="refresh-btn" (click)="fetchBookings()" [disabled]="loading">
+        <i class="fas fa-sync-alt" [ngClass]="{'fa-spin': loading}"></i> Refresh
+      </button>
     </div>
   </div>
 
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <i class="fas fa-spinner fa-spin"></i> Loading visitors...
+  </div>
+
   <!-- Scrollable Table Section -->
-  <div class="table-section">
+  <div class="table-section" *ngIf="!loading">
     <div class="table-wrapper">
       <table class="checkins-table">
         <thead>
@@ -64,18 +70,18 @@
             <th>Booking ID</th>
             <th>Visitor Name</th>
             <th>Amount</th>
-            <th>Checked‑in</th>
-            <th>Checked‑out</th>
+            <th>Check‑in Date</th>
+            <th>Check‑out Date</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngIf="filteredBookings.length === 0">
-            <td colspan="7" class="empty-state">No paid bookings found.</td>
+            <td colspan="7" class="empty-state">No bookings awaiting check‑in.</td>
           </tr>
           <tr *ngFor="let b of filteredBookings">
-            <td>{{ b.bookingReference }}</td>
+            <td><strong>{{ b.bookingReference }}</strong></td>
             <td>{{ b.userFullName }}</td>
             <td>{{ b.amount | currency:'USD':'symbol' }}</td>
             <td>{{ b.checkInDate | date:'MMM d, y' }}</td>
@@ -86,15 +92,12 @@
               </span>
             </td>
             <td class="actions">
-              <!-- Action buttons wired to TS methods -->
-              <button class="icon-btn" title="Check‑in" (click)="onPopupCheckin()">
+              <!-- Check-in only exists on this page -->
+              <button class="icon-btn checkin-btn" title="Check‑in" (click)="onCheckin(b)">
                 <i class="fas fa-sign-in-alt"></i>
               </button>
-              <button class="icon-btn" title="View" (click)="onView(b)">
+              <button class="icon-btn view-btn" title="View" (click)="onView(b)">
                 <i class="fas fa-eye"></i>
-              </button>
-              <button class="icon-btn" title="Check‑out" (click)="onPopupCheckout()">
-                <i class="fas fa-sign-out-alt"></i>
               </button>
             </td>
           </tr>
@@ -103,8 +106,12 @@
     </div>
   </div>
 
-  <!-- Popup Component -->
-  <app-checkin-popup [booking]="selectedBooking" [show]="showPopup" (close)="closePopup()" (checkin)="onPopupCheckin()"
-    (checkout)="onPopupCheckout()">
+  <!-- Popup Component (view + check-in only) -->
+  <app-checkin-popup
+    [booking]="selectedBooking"
+    [show]="showPopup"
+    mode="checkin"
+    (close)="closePopup()"
+    (checkin)="onPopupCheckin()">
   </app-checkin-popup>
 </div>

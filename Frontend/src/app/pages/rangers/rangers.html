@@ -1,0 +1,245 @@
+<!-- src/app/pages/rangers/rangers.html -->
+<div class="rangers-container">
+  <!-- Fixed Top Section -->
+  <div class="top-section">
+    <div class="rangers-header">
+      <div>
+        <h2>Ranger Management</h2>
+        <p>Manage and monitor all rangers in the system.</p>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="icon-circle green">
+          <i class="fas fa-users"></i>
+        </div>
+        <div class="card-content">
+          <p class="label">TOTAL RANGERS</p>
+          <h3>{{ rangers.length }}</h3>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="icon-circle blue">
+          <i class="fas fa-user-check"></i>
+        </div>
+        <div class="card-content">
+          <p class="label">ACTIVE RANGERS</p>
+          <h3>{{ rangers.filter(r => r.active).length }}</h3>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="icon-circle gray">
+          <i class="fas fa-user-slash"></i>
+        </div>
+        <div class="card-content">
+          <p class="label">INACTIVE RANGERS</p>
+          <h3>{{ rangers.filter(r => !r.active).length }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <input 
+        type="text" 
+        placeholder="Search by name, email, or phone..." 
+        [(ngModel)]="searchQuery"
+        (input)="applyFilter()"
+      />
+      <button class="refresh-btn" (click)="loadRangers()" [disabled]="isLoading">
+        <i class="fas fa-sync-alt" [ngClass]="{'fa-spin': isLoading}"></i> Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <i class="fas fa-spinner fa-spin"></i> Loading rangers...
+  </div>
+
+  <!-- Table Section -->
+  <div class="table-section" *ngIf="!isLoading">
+    <div class="table-wrapper">
+      <table class="rangers-table">
+        <thead>
+          <tr>
+            <th>Ranger</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="filteredRangers.length === 0">
+            <td colspan="5" class="empty-state">No rangers found.</td>
+          </tr>
+          <tr *ngFor="let ranger of filteredRangers">
+            <td>
+              <div class="ranger-cell">
+                <div class="avatar">{{ (ranger.fullName | slice:0:1) + (ranger.fullName | slice:ranger.fullName.indexOf(' ')+1:ranger.fullName.indexOf(' ')+2) }}</div>
+                <div>
+                  <div class="ranger-name">{{ ranger.fullName }}</div>
+                  <div class="ranger-id">ID: {{ ranger.id }}</div>
+                </div>
+              </div>
+            </td>
+            <td>{{ ranger.email }}</td>
+            <td>{{ ranger.phoneNumber || '—' }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="ranger.active ? 'status-active' : 'status-inactive'">
+                {{ ranger.active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td class="actions">
+              <button class="icon-btn view-btn" title="View Details" (click)="viewRangerDetails(ranger.id)">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="icon-btn alerts-btn" title="View Alerts" (click)="viewRangerAlerts(ranger.id)">
+                <i class="fas fa-exclamation-triangle"></i>
+              </button>
+              <button class="icon-btn status-btn" [ngClass]="ranger.active ? 'status-btn-inactive' : 'status-btn-active'" 
+                      title="{{ ranger.active ? 'Deactivate' : 'Activate' }}"
+                      (click)="toggleRangerStatus(ranger)"
+                      [disabled]="isTogglingStatus">
+                <i class="fas" [ngClass]="ranger.active ? 'fa-user-slash' : 'fa-user-check'"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Ranger Detail Popup -->
+  <div class="modal-overlay" *ngIf="showDetailPopup" (click)="closeDetailPopup()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="closeDetailPopup()">&times;</button>
+      
+      <div *ngIf="selectedRanger">
+        <div class="modal-header">
+          <h3>Ranger Details</h3>
+          <span class="status-badge" [ngClass]="selectedRanger.active ? 'status-active' : 'status-inactive'">
+            {{ selectedRanger.active ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+
+        <div class="modal-body">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label>Full Name</label>
+              <p>{{ selectedRanger.fullName }}</p>
+            </div>
+            <div class="detail-item">
+              <label>Email</label>
+              <p>{{ selectedRanger.email }}</p>
+            </div>
+            <div class="detail-item">
+              <label>Phone</label>
+              <p>{{ selectedRanger.phoneNumber || '—' }}</p>
+            </div>
+            <div class="detail-item">
+              <label>National ID</label>
+              <p>{{ selectedRanger.nationalId || '—' }}</p>
+            </div>
+            <div class="detail-item">
+              <label>Verified</label>
+              <p>{{ selectedRanger.verified ? '✅ Yes' : '❌ No' }}</p>
+            </div>
+            <div class="detail-item">
+              <label>Joined</label>
+              <p>{{ formatDate(selectedRanger.createdAt) }}</p>
+            </div>
+          </div>
+
+          <div class="stats-grid-mini">
+            <div class="stat-mini">
+              <span class="stat-mini-value">{{ selectedRanger.totalAssignedAlerts }}</span>
+              <span class="stat-mini-label">Total Assigned</span>
+            </div>
+            <div class="stat-mini">
+              <span class="stat-mini-value stat-active">{{ selectedRanger.activeAlerts }}</span>
+              <span class="stat-mini-label">Active Alerts</span>
+            </div>
+            <div class="stat-mini">
+              <span class="stat-mini-value stat-resolved">{{ selectedRanger.resolvedAlerts }}</span>
+              <span class="stat-mini-label">Resolved</span>
+            </div>
+          </div>
+
+          <div *ngIf="selectedRanger.recentAlerts && selectedRanger.recentAlerts.length > 0" class="recent-alerts">
+            <h4>Recent Alerts</h4>
+            <div class="alert-list">
+              <div *ngFor="let alert of selectedRanger.recentAlerts" class="alert-item-mini">
+                <span class="alert-type">{{ alert.alertType }}</span>
+                <span class="alert-status" [ngClass]="getStatusClass(alert.alertStatus)">
+                  {{ getStatusLabel(alert.alertStatus) }}
+                </span>
+                <span class="alert-time">{{ formatDate(alert.createdAt) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="closeDetailPopup()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts Popup -->
+  <div class="modal-overlay" *ngIf="showAlertsPopup" (click)="closeAlertsPopup()">
+    <div class="modal-content modal-lg" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="closeAlertsPopup()">&times;</button>
+      
+      <div class="modal-header">
+        <h3>Ranger Alerts</h3>
+        <span class="badge-count">{{ selectedRangerAlerts.length }} alerts</span>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="selectedRangerAlerts.length === 0" class="empty-state">
+          No alerts assigned to this ranger.
+        </div>
+
+        <div *ngFor="let alert of selectedRangerAlerts" class="alert-card">
+          <div class="alert-card-header">
+            <span class="alert-id">#{{ alert.id }}</span>
+            <span class="alert-status" [ngClass]="getStatusClass(alert.alertStatus)">
+              {{ getStatusLabel(alert.alertStatus) }}
+            </span>
+          </div>
+          <div class="alert-card-body">
+            <div class="alert-info">
+              <span><strong>Visitor:</strong> {{ alert.visitorName }}</span>
+              <span><strong>Phone:</strong> {{ alert.visitorPhone || '—' }}</span>
+              <span><strong>Type:</strong> {{ alert.alertType }}</span>
+            </div>
+            <div class="alert-location">
+              <span>📍 {{ alert.latitude }}, {{ alert.longitude }}</span>
+            </div>
+            <div *ngIf="alert.message" class="alert-message">
+              <strong>Message:</strong> {{ alert.message }}
+            </div>
+            <div class="alert-time">
+              <span>🕐 {{ formatDate(alert.createdAt) }}</span>
+              <span *ngIf="alert.resolvedAt">✅ Resolved: {{ formatDate(alert.resolvedAt) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAlertsPopup()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

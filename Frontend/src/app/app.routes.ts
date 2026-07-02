@@ -35,10 +35,17 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/tracking/tracking').then(m => m.TrackingComponent)
       },
+      // Check-in page: bookings that are PAID + PENDING, awaiting arrival
       {
-        path: 'checkins',
+        path: 'checkin',
         loadComponent: () =>
-          import('./pages/checkins/checkins').then(m => m.CheckinsComponent)
+          import('./pages/checkins/checkin').then(m => m.CheckinComponent)
+      },
+      // Check-out page: bookings that are PAID + CONFIRMED, awaiting departure
+      {
+        path: 'checkout',
+        loadComponent: () =>
+          import('./pages/checkout/checkout').then(m => m.CheckoutComponent)
       },
       {
         path: 'bookings',
@@ -76,7 +83,13 @@ export const routes: Routes = [
         path: 'broadcast',
         loadComponent: () =>
           import('./pages/broadcast/broadcast').then(m => m.BroadcastComponent)
+      },
+      // In your routing module
+
+      {
+        path: 'rangers',
+        loadComponent: () => import('./pages/rangers/rangers').then(m => m.RangersComponent)
       }
-    ]
+    ] 
   }
 ];

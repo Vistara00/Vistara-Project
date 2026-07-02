@@ -1,0 +1,117 @@
+<div class="checkins-container">
+  <!-- Fixed Top Section -->
+  <div class="top-section">
+    <!-- Header -->
+    <div class="checkins-header">
+      <div>
+        <h2>Check‑outs</h2>
+        <p>Visitors currently checked in and awaiting departure.</p>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="summary-card visitors">
+        <div class="icon-circle green">
+          <i class="fas fa-users"></i>
+        </div>
+        <div class="card-content">
+          <p class="label">CURRENTLY CHECKED‑IN</p>
+          <h3>{{ totalCheckedIn }}</h3>
+        </div>
+      </div>
+
+      <div class="summary-card scheduled">
+        <div class="icon-circle gray">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="card-content">
+          <p class="label">EXPECTED CHECK‑OUTS TODAY</p>
+          <h3>{{ expectedCheckouts }}</h3>
+        </div>
+      </div>
+
+      <div class="summary-card checkouts">
+        <div class="icon-circle red">
+          <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <div class="card-content">
+          <p class="label">OVERDUE CHECK‑OUTS</p>
+          <h3>{{ overdueCheckouts }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <input type="text" placeholder="Search by name or booking ID..." [(ngModel)]="searchQuery" />
+      <button class="refresh-btn" (click)="fetchVisitors()" [disabled]="loading">
+        <i class="fas fa-sync-alt" [ngClass]="{'fa-spin': loading}"></i> Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <i class="fas fa-spinner fa-spin"></i> Loading visitors...
+  </div>
+
+  <!-- Scrollable Table Section -->
+  <div class="table-section" *ngIf="!loading">
+    <div class="table-wrapper">
+      <table class="checkins-table">
+        <thead>
+          <tr>
+            <th>Booking ID</th>
+            <th>Visitor Name</th>
+            <th>Amount</th>
+            <th>Check‑in Date</th>
+            <th>Check‑out Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="filteredBookings.length === 0">
+            <td colspan="7" class="empty-state">No bookings awaiting check‑out.</td>
+          </tr>
+          <tr *ngFor="let b of filteredBookings">
+            <td><strong>{{ b.bookingReference }}</strong></td>
+            <td>{{ b.userFullName }}</td>
+            <td>{{ b.amount | currency:'USD':'symbol' }}</td>
+            <td>{{ b.checkInDate | date:'MMM d, y' }}</td>
+            <td>{{ b.checkOutDate | date:'MMM d, y' }}</td>
+            <td>
+              <span class="status" [ngClass]="b.bookingStatus.toLowerCase()">
+                {{ b.bookingStatus }}
+              </span>
+            </td>
+            <td class="actions">
+              <!-- Check-out only exists on this page -->
+              <button class="icon-btn checkout-btn" title="Check‑out" (click)="onCheckout(b)">
+                <i class="fas fa-sign-out-alt"></i>
+              </button>
+              <button class="icon-btn view-btn" title="View" (click)="onView(b)">
+                <i class="fas fa-eye"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Popup Component (view + check-out only) -->
+  <app-checkin-popup
+    [booking]="selectedBooking"
+    [show]="showPopup"
+    mode="checkout"
+    (close)="closePopup()"
+    (checkout)="onPopupCheckout()">
+  </app-checkin-popup>
+</div>

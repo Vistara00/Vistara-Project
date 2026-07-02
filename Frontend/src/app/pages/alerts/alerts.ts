@@ -41,10 +41,20 @@ export interface EmergencyAlert {
   visitorPhone: string;
 }
 
-export interface ApiResponse {
+export interface Ranger {
+  id: number;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  active: boolean;
+  verified: boolean;
+}
+
+export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
-  data: EmergencyAlert[];
+  data: T;
   timestamp: string;
   statusCode: number;
 }
@@ -63,9 +73,41 @@ export interface AlertStats {
 export class AlertService {
   constructor(private http: HttpClient) { }
 
-  getAllAlerts(): Observable<ApiResponse> {
-    return this.http.get<ApiResponse>(
-      `${environment.apiUrl}/v1/emergency/admin/all`
+  getAllAlerts(): Observable<ApiResponse<EmergencyAlert[]>> {
+    return this.http.get<ApiResponse<EmergencyAlert[]>>(
+      `${environment.apiUrl}/v1/admin/alerts`
+    );
+  }
+
+  getActiveAlerts(): Observable<ApiResponse<EmergencyAlert[]>> {
+    return this.http.get<ApiResponse<EmergencyAlert[]>>(
+      `${environment.apiUrl}/v1/admin/alerts/active`
+    );
+  }
+
+  getAvailableRangers(): Observable<ApiResponse<Ranger[]>> {
+    return this.http.get<ApiResponse<Ranger[]>>(
+      `${environment.apiUrl}/v1/admin/rangers/available`
+    );
+  }
+
+  assignRanger(alertId: number, rangerId: number): Observable<ApiResponse<EmergencyAlert>> {
+    return this.http.put<ApiResponse<EmergencyAlert>>(
+      `${environment.apiUrl}/v1/admin/assign-ranger/${alertId}/${rangerId}`,
+      {}
+    );
+  }
+
+  resolveAlert(alertId: number, notes: string): Observable<ApiResponse<EmergencyAlert>> {
+    return this.http.put<ApiResponse<EmergencyAlert>>(
+      `${environment.apiUrl}/v1/admin/resolve-alert/${alertId}`,
+      { notes }
+    );
+  }
+
+  getAlertById(alertId: number): Observable<ApiResponse<EmergencyAlert>> {
+    return this.http.get<ApiResponse<EmergencyAlert>>(
+      `${environment.apiUrl}/v1/admin/alerts/${alertId}`
     );
   }
 }
@@ -208,6 +250,20 @@ export class AlertsComponent implements OnInit, OnDestroy {
   typeFilter: AlertType | '' = '';
   statusFilter: AlertStatus | '' = '';
 
+  // ── Popup State ────────────────────────────────────────────────────────────
+  selectedAlert: EmergencyAlert | null = null;
+  showPopup = false;
+  popupMode: 'view' | 'assign' | 'resolve' = 'view';
+
+  // ── Assignment State ──────────────────────────────────────────────────────
+  availableRangers: Ranger[] = [];
+  selectedRangerId: number | null = null;
+  isAssigning = false;
+
+  // ── Resolve State ──────────────────────────────────────────────────────────
+  resolveNotes = '';
+  isResolving = false;
+
   // ── Auto-refresh ───────────────────────────────────────────────────────────
   private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -263,7 +319,8 @@ export class AlertsComponent implements OnInit, OnDestroy {
         !q ||
         a.visitorName.toLowerCase().includes(q) ||
         a.visitorPhone.toLowerCase().includes(q) ||
-        a.emergencyContactName.toLowerCase().includes(q);
+        a.emergencyContactName.toLowerCase().includes(q) ||
+        a.id.toString().includes(q);
 
       const matchesType = !this.typeFilter || a.alertType === this.typeFilter;
       const matchesStatus = !this.statusFilter || a.alertStatus === this.statusFilter;
@@ -278,24 +335,107 @@ export class AlertsComponent implements OnInit, OnDestroy {
   get resolvedCount(): number { return this.stats.resolvedToday; }
 
   // ── View Alert Detail ──────────────────────────────────────────────────────
-  viewAlert(id: number): void {
-    const alert = this.alerts.find((a) => a.id === id);
-    if (!alert) return;
+  viewAlert(alert: EmergencyAlert): void {
+    this.selectedAlert = alert;
+    this.popupMode = 'view';
+    this.showPopup = true;
+    this.resolveNotes = '';
+    this.selectedRangerId = null;
+  }
 
-    const { time, relative } = formatTime(alert.createdAt);
+  // ── Assign Ranger ──────────────────────────────────────────────────────────
+  openAssignPopup(alert: EmergencyAlert): void {
+    this.selectedAlert = alert;
+    this.popupMode = 'assign';
+    this.showPopup = true;
+    this.selectedRangerId = null;
+    this.isAssigning = false;
+    this.loadAvailableRangers();
+  }
 
-    window.alert(
-      `Alert #${alert.id}\n` +
-      `Visitor: ${alert.visitorName} (${alert.visitorPhone})\n` +
-      `Type: ${humanizeAlertType(alert.alertType)}\n` +
-      `Status: ${statusLabel(alert.alertStatus)}\n` +
-      `Priority: ${alert.priority}\n` +
-      `Location: ${alert.latitude}, ${alert.longitude}\n` +
-      `Time: ${time} (${relative})\n` +
-      `Message: ${alert.message}\n` +
-      `Emergency Contact: ${alert.emergencyContactName} – ${alert.emergencyContactPhone}` +
-      (alert.assignedRangerName ? `\nAssigned Ranger: ${alert.assignedRangerName}` : '')
-    );
+  loadAvailableRangers(): void {
+    this.alertService.getAvailableRangers().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.availableRangers = res.data ?? [];
+        } else {
+          this.availableRangers = [];
+        }
+      },
+      error: () => {
+        this.availableRangers = [];
+      }
+    });
+  }
+
+  assignRanger(): void {
+    if (!this.selectedAlert || !this.selectedRangerId) {
+      alert('Please select a ranger to assign.');
+      return;
+    }
+
+    this.isAssigning = true;
+    this.alertService.assignRanger(this.selectedAlert.id, this.selectedRangerId).subscribe({
+      next: (res) => {
+        this.isAssigning = false;
+        if (res.success) {
+          alert('Ranger assigned successfully!');
+          this.closePopup();
+          this.loadAlerts();
+        } else {
+          alert(res.message || 'Failed to assign ranger.');
+        }
+      },
+      error: (err) => {
+        this.isAssigning = false;
+        alert(err?.error?.message || 'Failed to assign ranger.');
+      }
+    });
+  }
+
+  // ── Resolve Alert ──────────────────────────────────────────────────────────
+  openResolvePopup(alert: EmergencyAlert): void {
+    this.selectedAlert = alert;
+    this.popupMode = 'resolve';
+    this.showPopup = true;
+    this.resolveNotes = '';
+    this.isResolving = false;
+  }
+
+  resolveAlert(): void {
+    if (!this.selectedAlert) return;
+
+    if (!this.resolveNotes.trim()) {
+      alert('Please provide resolution notes.');
+      return;
+    }
+
+    this.isResolving = true;
+    this.alertService.resolveAlert(this.selectedAlert.id, this.resolveNotes).subscribe({
+      next: (res) => {
+        this.isResolving = false;
+        if (res.success) {
+          alert('Alert resolved successfully!');
+          this.closePopup();
+          this.loadAlerts();
+        } else {
+          alert(res.message || 'Failed to resolve alert.');
+        }
+      },
+      error: (err) => {
+        this.isResolving = false;
+        alert(err?.error?.message || 'Failed to resolve alert.');
+      }
+    });
+  }
+
+  // ── Popup Controls ─────────────────────────────────────────────────────────
+  closePopup(): void {
+    this.showPopup = false;
+    this.selectedAlert = null;
+    this.selectedRangerId = null;
+    this.resolveNotes = '';
+    this.popupMode = 'view';
   }
 
   // ── Export CSV ─────────────────────────────────────────────────────────────
