@@ -7,6 +7,9 @@
         <h2>Ranger Management</h2>
         <p>Manage and monitor all rangers in the system.</p>
       </div>
+      <button class="btn-primary" (click)="openRegisterPopup()">
+        <i class="fas fa-user-plus"></i> Register Ranger
+      </button>
     </div>
 
     <!-- Stats -->
@@ -117,6 +120,134 @@
       </table>
     </div>
   </div>
+
+  <!-- Register Ranger Popup -->
+<div class="modal-overlay" *ngIf="showRegisterPopup" (click)="closeRegisterPopup()">
+  <div class="modal-content modal-lg" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="closeRegisterPopup()">&times;</button>
+    
+    <div class="modal-header">
+      <h3><i class="fas fa-user-shield"></i> Register New Ranger</h3>
+    </div>
+
+    <div class="modal-body">
+      <form #registrationForm="ngForm" (ngSubmit)="registerRanger(registrationForm)">
+        <div class="form-grid">
+          <!-- Full Name -->
+          <div class="form-group full-width">
+            <label for="fullName">Full Name *</label>
+            <input 
+              type="text" 
+              id="fullName" 
+              class="form-control" 
+              [(ngModel)]="rangerForm.fullName" 
+              name="fullName"
+              placeholder="Enter full name"
+              required
+            />
+          </div>
+
+          <!-- Email -->
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input 
+              type="email" 
+              id="email" 
+              class="form-control" 
+              [(ngModel)]="rangerForm.email" 
+              name="email"
+              placeholder="Enter email address"
+              required
+              email
+            />
+          </div>
+
+          <!-- Phone Number -->
+          <div class="form-group">
+            <label for="phoneNumber">Phone Number *</label>
+            <input 
+              type="tel" 
+              id="phoneNumber" 
+              class="form-control" 
+              [(ngModel)]="rangerForm.phoneNumber" 
+              name="phoneNumber"
+              placeholder="Enter phone number"
+              required
+            />
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label for="password">Password *</label>
+            <div class="password-input-wrapper">
+              <input 
+                [type]="passwordVisible ? 'text' : 'password'"
+                id="password" 
+                class="form-control" 
+                [(ngModel)]="rangerForm.password" 
+                name="password"
+                placeholder="Min 6 characters"
+                required
+                minlength="6"
+              />
+              <button type="button" class="password-toggle" (click)="togglePasswordVisibility()">
+                <i class="fas" [ngClass]="passwordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+              </button>
+            </div>
+            <small class="text-muted">Password must be at least 6 characters</small>
+          </div>
+
+          <!-- National ID -->
+          <div class="form-group">
+            <label for="nationalId">National ID (Optional)</label>
+            <input 
+              type="text" 
+              id="nationalId" 
+              class="form-control" 
+              [(ngModel)]="rangerForm.nationalId" 
+              name="nationalId"
+              placeholder="Enter national ID"
+            />
+          </div>
+
+          <!-- Emergency Contact Name -->
+          <div class="form-group">
+            <label for="emergencyContactName">Emergency Contact Name (Optional)</label>
+            <input 
+              type="text" 
+              id="emergencyContactName" 
+              class="form-control" 
+              [(ngModel)]="rangerForm.emergencyContactName" 
+              name="emergencyContactName"
+              placeholder="Enter emergency contact name"
+            />
+          </div>
+
+          <!-- Emergency Contact Phone -->
+          <div class="form-group">
+            <label for="emergencyContactPhone">Emergency Contact Phone (Optional)</label>
+            <input 
+              type="tel" 
+              id="emergencyContactPhone" 
+              class="form-control" 
+              [(ngModel)]="rangerForm.emergencyContactPhone" 
+              name="emergencyContactPhone"
+              placeholder="Enter emergency contact phone"
+            />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeRegisterPopup()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="isRegistering || registrationForm.invalid">
+            <i class="fas" [ngClass]="isRegistering ? 'fa-spinner fa-spin' : 'fa-user-plus'"></i>
+            {{ isRegistering ? 'Registering...' : 'Register Ranger' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
   <!-- Ranger Detail Popup -->
   <div class="modal-overlay" *ngIf="showDetailPopup" (click)="closeDetailPopup()">

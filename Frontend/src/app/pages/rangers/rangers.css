@@ -35,6 +35,30 @@
   font-size: 14px;
 }
 
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #1b5e20;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .summary-cards {
   display: flex;
   gap: 20px;
@@ -307,7 +331,7 @@
   font-size: 16px;
 }
 
-/* Modal Styles */
+/* ── Modal Styles ──────────────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -341,7 +365,7 @@
 }
 
 .modal-content.modal-lg {
-  max-width: 800px;
+  max-width: 700px;
 }
 
 @keyframes slideUp {
@@ -379,6 +403,11 @@
   margin: 0;
   font-size: 18px;
   color: #111827;
+}
+
+.modal-header h3 i {
+  color: #2e7d32;
+  margin-right: 8px;
 }
 
 .modal-body {
@@ -420,7 +449,84 @@
   font-weight: 600;
 }
 
-/* Detail Grid */
+/* ── Registration Form ────────────────────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-control {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-control.ng-invalid.ng-touched {
+  border-color: #dc2626;
+}
+
+.text-muted {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.password-input-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 4px;
+}
+
+.password-toggle:hover {
+  color: #374151;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* ── Detail Grid ────────────────────────────────────────────────────────────── */
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -448,7 +554,7 @@
   color: #111827;
 }
 
-/* Stats Mini */
+/* ── Stats Mini ────────────────────────────────────────────────────────────── */
 .stats-grid-mini {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -485,7 +591,7 @@
   color: #6b7280;
 }
 
-/* Recent Alerts */
+/* ── Recent Alerts ──────────────────────────────────────────────────────────── */
 .recent-alerts {
   margin-top: 16px;
 }
@@ -547,7 +653,7 @@
   color: #6b7280;
 }
 
-/* Alert Cards for full list */
+/* ── Alert Cards ────────────────────────────────────────────────────────────── */
 .alert-card {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -601,10 +707,18 @@
   gap: 16px;
 }
 
-/* Responsive */
+/* ── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .summary-cards {
     flex-direction: column;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group.full-width {
+    grid-column: 1;
   }
 
   .detail-grid {
@@ -634,5 +748,25 @@
   .modal-content {
     width: 95%;
     padding: 16px;
+  }
+
+  .rangers-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button {
+    width: 100%;
+    justify-content: center;
   }
 }

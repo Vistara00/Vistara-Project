@@ -1,7 +1,7 @@
 // src/app/pages/rangers/rangers.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -40,6 +40,16 @@ export interface EmergencyAlert {
   message: string;
   createdAt: string;
   resolvedAt: string | null;
+}
+
+export interface RegisterRangerRequest {
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  password: string;
+  nationalId?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
 }
 
 export interface ApiResponse<T = any> {
@@ -86,6 +96,13 @@ export class RangerService {
       { active }
     );
   }
+
+  registerRanger(request: RegisterRangerRequest): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(
+      `${environment.apiUrl}/v1/admin/register/ranger`,
+      request
+    );
+  }
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -108,7 +125,22 @@ export class RangersComponent implements OnInit {
   searchQuery = '';
   showDetailPopup = false;
   showAlertsPopup = false;
+  showRegisterPopup = false;
   isTogglingStatus = false;
+  isRegistering = false;
+
+  // Registration form data model
+  rangerForm: RegisterRangerRequest = {
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    password: '',
+    nationalId: '',
+    emergencyContactName: '',
+    emergencyContactPhone: ''
+  };
+
+  passwordVisible = false;
 
   constructor(private rangerService: RangerService) { }
 
@@ -213,6 +245,72 @@ export class RangersComponent implements OnInit {
       }
     });
   }
+
+  // ===== Registration Methods =====
+
+  openRegisterPopup(): void {
+    this.showRegisterPopup = true;
+    this.resetForm();
+  }
+
+  closeRegisterPopup(): void {
+    this.showRegisterPopup = false;
+    this.resetForm();
+  }
+
+  resetForm(): void {
+    this.rangerForm = {
+      fullName: '',
+      email: '',
+      phoneNumber: '',
+      password: '',
+      nationalId: '',
+      emergencyContactName: '',
+      emergencyContactPhone: ''
+    };
+    this.passwordVisible = false;
+    this.isRegistering = false;
+  }
+
+  registerRanger(form: NgForm): void {
+    if (form.invalid) {
+      // Mark all fields as touched to show validation errors
+      Object.keys(form.controls).forEach(key => {
+        form.controls[key].markAsTouched();
+      });
+      alert('Please fill in all required fields correctly.');
+      return;
+    }
+
+    this.isRegistering = true;
+    this.rangerService.registerRanger(this.rangerForm).subscribe({
+      next: (res) => {
+        this.isRegistering = false;
+        if (res.success) {
+          alert('Ranger registered successfully!');
+          this.closeRegisterPopup();
+          this.loadRangers();
+        } else {
+          alert(res.message || 'Failed to register ranger.');
+        }
+      },
+      error: (err) => {
+        this.isRegistering = false;
+        alert(err?.error?.message || 'Failed to register ranger. Please try again.');
+      }
+    });
+  }
+
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  togglePasswordVisibility(): void {
+    this.passwordVisible = !this.passwordVisible;
+  }
+
+  // ===== Helper Methods =====
 
   closeDetailPopup(): void {
     this.showDetailPopup = false;
