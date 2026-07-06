@@ -15,6 +15,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -29,9 +34,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints (no authentication required)
+                        // Public endpoints
                         .requestMatchers(
                                 "/auth/**",
                                 "/public/**",
@@ -40,14 +45,14 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        // M-Pesa callback (must be public)
+                        // M-Pesa callback
                         .requestMatchers("/payments/mpesa/stk-callback").permitAll()
-                        // M-Pesa STK Push initiation (authenticated)
+                        // M-Pesa STK Push initiation
                         .requestMatchers("/payments/mpesa/stkpush").authenticated()
-                        // Role-based access - ✅ Fix: Use RANGER instead of PARK_RANGER
-                        .requestMatchers("/tourist/**").hasRole("TOURIST")
-                        .requestMatchers("/ranger/**").hasRole("RANGER")  // ✅ Changed from PARK_RANGER to RANGER
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // Role-based access - using hasAuthority for exact role matching
+                        .requestMatchers("/tourist/**").hasAuthority("TOURIST")
+                        .requestMatchers("/ranger/**").hasAuthority("RANGER")
+                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
                         // All other requests require authentication
                         .anyRequest().authenticated()
                 )
@@ -58,6 +63,23 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:4200",
+                "https://undrafted-erasable-crevice.ngrok-free.dev"
+        ));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean

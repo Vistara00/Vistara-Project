@@ -34,7 +34,6 @@ public class VisitorService {
         if (bookingId != null && bookingId > 0) {
             Booking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new RuntimeException("Booking not found"));
-            // Optional: Keep this as a safety net, but controller already validates
             if (!Booking.BookingStatus.CONFIRMED.equals(booking.getBookingStatus()) ||
                     !Booking.PaymentStatus.PAID.equals(booking.getPaymentStatus())) {
                 throw new RuntimeException("Booking is not confirmed or payment not completed");
@@ -224,13 +223,19 @@ public class VisitorService {
         return response;
     }
 
+    /**
+     * ✅ Convert VisitorSession to VisitorSessionResponse DTO
+     * This is the method that was missing the fields
+     */
     public VisitorSessionResponse convertToSessionResponse(VisitorSession session) {
+        if (session == null) {
+            return null;
+        }
+
         VisitorSessionResponse response = new VisitorSessionResponse();
+
+        // Session details
         response.setSessionId(session.getId());
-        response.setUserId(session.getUser().getId());
-        response.setVisitorName(session.getUser().getFullName());
-        response.setVisitorEmail(session.getUser().getEmail());
-        response.setVisitorPhone(session.getUser().getPhoneNumber());
         response.setCheckInTime(session.getCheckInTime());
         response.setCheckOutTime(session.getCheckOutTime());
         response.setActive(session.isActive());
@@ -240,6 +245,15 @@ public class VisitorService {
         response.setHasEmergency(session.isHasEmergency());
         response.setNotes(session.getNotes());
 
+        // Visitor details
+        if (session.getUser() != null) {
+            response.setUserId(session.getUser().getId());
+            response.setVisitorName(session.getUser().getFullName());
+            response.setVisitorEmail(session.getUser().getEmail());
+            response.setVisitorPhone(session.getUser().getPhoneNumber());
+        }
+
+        // Booking details
         if (session.getBooking() != null) {
             response.setBookingId(session.getBooking().getId());
             response.setBookingReference(session.getBooking().getBookingReference());

@@ -12,13 +12,13 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class VisitorSessionResponse {
+public class VisitorTrackingDetailsResponse {
 
     // Session details
     private Long sessionId;
     private LocalDateTime checkInTime;
     private LocalDateTime checkOutTime;
-    private Boolean active;  // Changed from isActive to match setActive()
+    private Boolean isActive;
     private Integer groupSize;
     private String vehicleRegistration;
     private Boolean hasEmergency;
@@ -26,7 +26,7 @@ public class VisitorSessionResponse {
     private String notes;
 
     // Visitor details
-    private Long userId;  // Changed from visitorId to match setUserId()
+    private Long visitorId;
     private String visitorName;
     private String visitorEmail;
     private String visitorPhone;
@@ -34,15 +34,15 @@ public class VisitorSessionResponse {
     // Booking details
     private Long bookingId;
     private String bookingReference;
-    private String bookingStatus;
     private String paymentStatus;
+    private String bookingStatus;
 
-    // Last location (optional - for detailed responses)
+    // Last location
     private Double lastLatitude;
     private Double lastLongitude;
     private LocalDateTime lastLocationTime;
 
-    // Location history (optional - for detailed responses)
+    // Location history
     private List<LocationTrackingDTO> locationHistory;
     private Integer totalLocations;
 }

@@ -1,6 +1,6 @@
 package com.vistara.tourist_tracking_system.repository;
 
-import com.vistara.tourist_tracking_system.model.LocationTracking;
+import com.vistara.tourist_tracking_system.model.LocationTracking;  // ✅ ADD THIS IMPORT
 import com.vistara.tourist_tracking_system.model.VisitorSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

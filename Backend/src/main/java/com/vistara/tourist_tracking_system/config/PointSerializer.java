@@ -7,7 +7,7 @@ import org.locationtech.jts.geom.Point;
 
 import java.io.IOException;
 
-public class GeometrySerializer extends JsonSerializer<Point> {
+public class PointSerializer extends JsonSerializer<Point> {
     @Override
     public void serialize(Point point, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         if (point == null) {

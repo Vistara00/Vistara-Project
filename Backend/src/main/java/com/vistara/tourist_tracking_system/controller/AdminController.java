@@ -11,17 +11,31 @@ import com.vistara.tourist_tracking_system.repository.EmergencyAlertRepository;
 import com.vistara.tourist_tracking_system.repository.LocationTrackingRepository;
 import com.vistara.tourist_tracking_system.repository.UserRepository;
 import com.vistara.tourist_tracking_system.repository.VisitorSessionRepository;
-import com.vistara.tourist_tracking_system.service.*;
+import com.vistara.tourist_tracking_system.service.BookingService;
+import com.vistara.tourist_tracking_system.service.DashboardService;
+import com.vistara.tourist_tracking_system.service.EmergencyService;
+import com.vistara.tourist_tracking_system.service.NotificationService;
+import com.vistara.tourist_tracking_system.service.TrackingService;
+import com.vistara.tourist_tracking_system.service.UserService;
+import com.vistara.tourist_tracking_system.service.VisitorService;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -133,24 +147,70 @@ public class AdminController {
     }
 
     @GetMapping("/visitor-tracking-details/{sessionId}")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getVisitorTrackingDetails(
+    public ResponseEntity<ApiResponse<VisitorTrackingDetailsResponse>> getVisitorTrackingDetails(
             @PathVariable Long sessionId) {
-        Map<String, Object> details = new HashMap<>();
+
         VisitorSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new RuntimeException("Session not found"));
-        LocationTracking lastLocation = locationTrackingRepository.findTopBySessionOrderByTimestampDesc(session);
+
+        LocationTracking lastLocation = locationTrackingRepository
+                .findTopBySessionOrderByTimestampDesc(session);
+
         List<LocationTracking> history = trackingService.getLocationHistory(
                 sessionId,
                 LocalDateTime.now().minusHours(24),
                 LocalDateTime.now()
         );
-        details.put("session", session);
-        details.put("visitor", session.getUser());
-        details.put("lastLocation", lastLocation);
-        details.put("locationHistory", history);
-        details.put("totalLocations", history.size());
-        details.put("booking", session.getBooking());
-        return ResponseEntity.ok(ApiResponse.success(details, "Visitor tracking details retrieved"));
+
+        // Convert location history to DTOs
+        List<LocationTrackingDTO> historyDTOs = history.stream()
+                .map(loc -> LocationTrackingDTO.builder()
+                        .id(loc.getId())
+                        .latitude(loc.getLatitude())
+                        .longitude(loc.getLongitude())
+                        .accuracy(loc.getAccuracy())
+                        .batteryLevel(loc.getBatteryLevel())
+                        .timestamp(loc.getTimestamp())
+                        .withinGeofence(loc.isWithinGeofence())
+                        .build())
+                .collect(Collectors.toList());
+
+        // Build response
+        VisitorTrackingDetailsResponse response = VisitorTrackingDetailsResponse.builder()
+                // Session details
+                .sessionId(session.getId())
+                .checkInTime(session.getCheckInTime())
+                .checkOutTime(session.getCheckOutTime())
+                .isActive(session.isActive())
+                .groupSize(session.getGroupSize())
+                .vehicleRegistration(session.getVehicleRegistration())
+                .hasEmergency(session.isHasEmergency())
+                .sosTriggered(session.isSosTriggered())
+                .notes(session.getNotes())
+
+                // Visitor details
+                .visitorId(session.getUser().getId())
+                .visitorName(session.getUser().getFullName())
+                .visitorEmail(session.getUser().getEmail())
+                .visitorPhone(session.getUser().getPhoneNumber())
+
+                // Booking details
+                .bookingId(session.getBooking() != null ? session.getBooking().getId() : null)
+                .bookingReference(session.getBooking() != null ? session.getBooking().getBookingReference() : null)
+                .paymentStatus(session.getBooking() != null ? session.getBooking().getPaymentStatus() : null)
+                .bookingStatus(session.getBooking() != null ? session.getBooking().getBookingStatus() : null)
+
+                // Last location
+                .lastLatitude(lastLocation != null ? lastLocation.getLatitude() : null)
+                .lastLongitude(lastLocation != null ? lastLocation.getLongitude() : null)
+                .lastLocationTime(lastLocation != null ? lastLocation.getTimestamp() : null)
+
+                // Location history
+                .locationHistory(historyDTOs)
+                .totalLocations(history.size())
+                .build();
+
+        return ResponseEntity.ok(ApiResponse.success(response, "Visitor tracking details retrieved"));
     }
 
     // ========== RANGER MANAGEMENT ==========
@@ -290,6 +350,9 @@ public class AdminController {
                         data.put("lastLatitude", lastLocation.getLatitude());
                         data.put("lastLongitude", lastLocation.getLongitude());
                         data.put("lastLocationTime", lastLocation.getTimestamp());
+                        data.put("lastAccuracy", lastLocation.getAccuracy());
+                        data.put("lastBatteryLevel", lastLocation.getBatteryLevel());
+                        data.put("lastWithinGeofence", lastLocation.isWithinGeofence());
                     }
 
                     if (session.getBooking() != null) {
@@ -400,7 +463,7 @@ public class AdminController {
 
     @PostMapping("/mpesa-callback")
     public ResponseEntity<String> mpesaCallback(@RequestBody String callbackJson) {
-        System.out.println("M-Pesa callback received: " + callbackJson);
+        log.info("M-Pesa callback received: {}", callbackJson);
         return ResponseEntity.ok("{\"ResultCode\":0,\"ResultDesc\":\"Success\"}");
     }
 

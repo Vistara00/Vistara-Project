@@ -21,15 +21,30 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByRole(User.Role role);
 
+    // Add this method
+    List<User> findByRoleAndActive(User.Role role, boolean active);
+
+    // Get active users by role
     List<User> findByRoleAndActiveTrue(User.Role role);
 
-    // ✅ CORRECTED: Use alertStatus instead of status
-    @Query("SELECT u FROM User u WHERE u.role = 'RANGER' AND u.active = true AND u NOT IN " +
-            "(SELECT DISTINCT e.assignedRanger FROM EmergencyAlert e WHERE e.alertStatus = 'RESPONDING')")
-    List<User> findAvailableRangers();
+    // Get inactive users by role
+    List<User> findByRoleAndActiveFalse(User.Role role);
 
-    // Alternative method using the correct field name
+    // Find available rangers (not assigned to any active alert)
     @Query("SELECT u FROM User u WHERE u.role = 'RANGER' AND u.active = true AND u.id NOT IN " +
             "(SELECT DISTINCT e.assignedRanger.id FROM EmergencyAlert e WHERE e.alertStatus = 'RESPONDING')")
-    List<User> findAvailableRangersAlt();
+    List<User> findAvailableRangers();
+
+    // Count users by role
+    long countByRole(User.Role role);
+
+    // Count active users by role
+    long countByRoleAndActiveTrue(User.Role role);
+
+    // Find users by role with pagination (if needed)
+    List<User> findByRoleOrderByFullNameAsc(User.Role role);
+
+    // Search users by name or email
+    @Query("SELECT u FROM User u WHERE LOWER(u.fullName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
+    List<User> searchUsers(String searchTerm);
 }

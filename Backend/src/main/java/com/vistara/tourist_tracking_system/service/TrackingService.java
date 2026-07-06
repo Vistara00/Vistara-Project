@@ -2,7 +2,7 @@ package com.vistara.tourist_tracking_system.service;
 
 import com.vistara.tourist_tracking_system.dto.LocationUpdateDTO;
 import com.vistara.tourist_tracking_system.model.GeofenceZone;
-import com.vistara.tourist_tracking_system.model.LocationTracking;
+import com.vistara.tourist_tracking_system.model.LocationTracking;  // ✅ ADD THIS IMPORT
 import com.vistara.tourist_tracking_system.model.VisitorSession;
 import com.vistara.tourist_tracking_system.repository.GeofenceZoneRepository;
 import com.vistara.tourist_tracking_system.repository.LocationTrackingRepository;
@@ -201,9 +201,12 @@ public class TrackingService {
     @Transactional
     public void checkZoneExit(Long sessionId, double newLatitude, double newLongitude) {
         // Get the previous location
-        LocationTracking previousLocation = locationRepository.findTopBySessionOrderByTimestampDesc(
-                sessionRepository.findById(sessionId).orElse(null)
-        );
+        VisitorSession session = sessionRepository.findById(sessionId).orElse(null);
+        if (session == null) {
+            return;
+        }
+
+        LocationTracking previousLocation = locationRepository.findTopBySessionOrderByTimestampDesc(session);
 
         if (previousLocation == null) {
             return;
@@ -219,7 +222,6 @@ public class TrackingService {
         // Find zones that were exited
         for (GeofenceZone zone : previousZones) {
             if (!newZones.contains(zone) && zone.getAlertOnExit()) {
-                VisitorSession session = sessionRepository.findById(sessionId).orElse(null);
                 if (session != null) {
                     notificationService.createNotification(
                             session.getUser(),
