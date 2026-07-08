@@ -7,17 +7,16 @@
         <h2>Bookings Management</h2>
         <p>Manage and monitor visitor bookings across all park zones.</p>
       </div>
-      <button class="new-booking-btn" (click)="openBookingModal()">+ New Booking</button>
+      <button class="new-booking-btn" (click)="openBookingModal()">
+        <i class="fas fa-plus"></i> New Booking
+      </button>
     </div>
 
-    <!--
-      Modal:
-      - *ngIf instead of [hidden] so the component is only mounted when needed
-      - (close) fires after the success animation completes (2.5s delay in child)
-      - (cancel) fires immediately when Cancel is clicked
-    -->
-    <app-new-booking *ngIf="showModal" (close)="closeBookingModal()" (cancel)="closeBookingModal()"
-      (bookingSuccess)="fetchBookings()"> ← add this
+    <!-- Modal -->
+    <app-new-booking *ngIf="showModal" 
+      (close)="closeBookingModal()" 
+      (cancel)="closeBookingModal()"
+      (bookingSuccess)="fetchBookings()">
     </app-new-booking>
 
     <!-- Summary cards -->
@@ -25,37 +24,86 @@
       <div class="summary-card">
         <div class="icon calendar"><i class="fas fa-calendar-alt"></i></div>
         <div>
-          <h3>Today's Bookings</h3>
+          <h3>Total Bookings</h3>
           <p>{{ totalItems }}</p>
         </div>
       </div>
       <div class="summary-card">
         <div class="icon pending"><i class="fas fa-hourglass-half"></i></div>
         <div>
-          <h3>Pending Confirmations</h3>
-          <p>{{ bookings.filter(b => b.status === 'Pending').length }}</p>
+          <h3>Pending</h3>
+          <p>{{ bookings.filter(b => b.paymentStatus === 'PENDING').length }}</p>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="icon paid"><i class="fas fa-check-circle"></i></div>
+        <div>
+          <h3>Paid</h3>
+          <p>{{ bookings.filter(b => b.paymentStatus === 'PAID').length }}</p>
         </div>
       </div>
       <div class="summary-card">
         <div class="icon revenue"><i class="fas fa-dollar-sign"></i></div>
         <div>
-          <h3>Total Revenue (MTD)</h3>
-          <p>12,450</p>
+          <h3>Total Revenue</h3>
+          <p>{{ bookings.reduce((sum, b) => sum + (b.amount || 0), 0) | number:'1.0-0' }}</p>
         </div>
       </div>
     </div>
 
     <!-- Filters -->
     <div class="filters">
-      <input type="text" placeholder="Filter by name or ID..." />
-      <select>
-        <option>All Zones</option>
+      <div class="filter-group">
+        <input 
+          type="text" 
+          placeholder="Search by name, ID, email..." 
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="onSearch()"
+          class="filter-input"
+        />
+        <button *ngIf="searchQuery" class="clear-btn" (click)="clearSearch()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <select class="filter-select" [(ngModel)]="selectedStatus" (change)="applyFilters()">
+        <option value="">All Status</option>
+        <option *ngFor="let status of paymentStatuses" [value]="status">
+          {{ status }}
+        </option>
       </select>
-      <select>
-        <option>All Status</option>
+
+      <select class="filter-select" [(ngModel)]="selectedPaymentMethod" (change)="applyFilters()">
+        <option value="">All Methods</option>
+        <option *ngFor="let method of paymentMethods" [value]="method">
+          {{ method }}
+        </option>
       </select>
-      <input type="date" />
-      <button class="sort-btn"><i class="fas fa-sort"></i> Sort</button>
+
+      <input 
+        type="date" 
+        class="filter-date" 
+        [(ngModel)]="startDate" 
+        (change)="applyFilters()"
+        placeholder="From"
+      />
+
+      <input 
+        type="date" 
+        class="filter-date" 
+        [(ngModel)]="endDate" 
+        (change)="applyFilters()"
+        placeholder="To"
+      />
+
+      <button class="btn-refresh" (click)="refreshData()" [disabled]="loading">
+        <i class="fas fa-sync-alt" [ngClass]="{'fa-spin': loading}"></i>
+        {{ loading ? 'Loading...' : 'Refresh' }}
+      </button>
+
+      <button class="btn-clear-filters" (click)="clearSearch()">
+        <i class="fas fa-undo"></i> Reset
+      </button>
     </div>
   </div>
 
@@ -63,12 +111,12 @@
   <div class="table-section">
     <!-- Error -->
     <div *ngIf="errorMessage" class="error-message">
-      {{ errorMessage }}
+      <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
     </div>
 
     <!-- Loading -->
     <div *ngIf="loading" class="loading-state">
-      Loading bookings...
+      <i class="fas fa-spinner fa-spin"></i> Loading bookings...
     </div>
 
     <!-- Table -->
@@ -76,43 +124,80 @@
       <table class="bookings-table">
         <thead>
           <tr>
-            <th>Booking ID</th>
-            <th>Visitor</th>
-            <th>Payment Method</th>
-            <th>Amount</th>
-            <th>Payment Status</th>
-            <th>Check‑in</th>
-            <th>Check‑out</th>
+            <th (click)="toggleSort('bookingReference')" class="sortable">
+              Booking ID <i class="fas" [ngClass]="getSortIcon('bookingReference')"></i>
+            </th>
+            <th (click)="toggleSort('visitor_name')" class="sortable">
+              Visitor <i class="fas" [ngClass]="getSortIcon('visitor_name')"></i>
+            </th>
+            <th>Contact</th>
+            <th (click)="toggleSort('payment_method')" class="sortable">
+              Payment <i class="fas" [ngClass]="getSortIcon('payment_method')"></i>
+            </th>
+            <th (click)="toggleSort('amount')" class="sortable">
+              Amount <i class="fas" [ngClass]="getSortIcon('amount')"></i>
+            </th>
+            <th (click)="toggleSort('paymentStatus')" class="sortable">
+              Status <i class="fas" [ngClass]="getSortIcon('paymentStatus')"></i>
+            </th>
+            <th (click)="toggleSort('checkin_date')" class="sortable">
+              Check‑in <i class="fas" [ngClass]="getSortIcon('checkin_date')"></i>
+            </th>
+            <th (click)="toggleSort('checkout_date')" class="sortable">
+              Check‑out <i class="fas" [ngClass]="getSortIcon('checkout_date')"></i>
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngIf="bookings.length === 0">
-            <td colspan="7" class="empty-state">No bookings found.</td>
+          <tr *ngIf="filteredBookings.length === 0">
+            <td colspan="8" class="empty-state">
+              <i class="fas fa-inbox"></i> No bookings found.
+            </td>
           </tr>
-          <tr *ngFor="let booking of bookings">
-            <td>{{ booking.id }}</td>
-            <td><strong>{{ booking.visitor_name }}</strong></td>
-            <td>{{ booking.payment_method }}</td>
-            <td>{{ booking.amount | currency:'':'symbol' }}</td>
+          <!-- ✅ Fixed: Use getInitials() method -->
+          <tr *ngFor="let booking of filteredBookings | slice: (currentPage * pageSize) : (currentPage * pageSize + pageSize)">
             <td>
-              <span class="status" [ngClass]="booking.status?.toLowerCase()">
-                {{ booking.status }}
+              <span class="booking-id">{{ booking.bookingReference }}</span>
+            </td>
+            <td>
+              <div class="visitor-info">
+                <div class="avatar">{{ getInitials(booking.visitor_name) }}</div>
+                <div>
+                  <div class="visitor-name">{{ booking.visitor_name }}</div>
+                  <div class="visitor-email">{{ booking.userEmail }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="contact-info">
+                <div><i class="fas fa-phone"></i> {{ booking.userPhone }}</div>
+                <div><i class="fas fa-car"></i> {{ booking.vehicleRegistration }}</div>
+              </div>
+            </td>
+            <td>
+              <span class="method-badge">{{ booking.payment_method }}</span>
+            </td>
+            <td class="amount-cell">{{ formatCurrency(booking.amount) }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusClass(booking.paymentStatus)">
+                {{ getStatusLabel(booking.paymentStatus) }}
               </span>
             </td>
-            <td>{{ booking.checkin_date | date:'MMM d, y' }}</td>
-            <td>{{ booking.checkout_date | date:'MMM d, y' }}</td>
+            <td>{{ formatDate(booking.checkin_date) }}</td>
+            <td>{{ formatDate(booking.checkout_date) }}</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <!-- Results + Pagination -->
-    <div class="table-footer" *ngIf="!loading && bookings.length > 0">
+    <div class="table-footer" *ngIf="!loading && filteredBookings.length > 0">
       <p class="results">
-        Showing {{ currentPage * pageSize + 1 }}–{{ currentPage * pageSize + bookings.length }} of {{ totalItems }}
-        results
+        <!-- ✅ Fixed: Use Math.min with proper syntax -->
+        Showing {{ currentPage * pageSize + 1 }}–{{ Math.min((currentPage + 1) * pageSize, filteredBookings.length) }} 
+        of {{ filteredBookings.length }} results
       </p>
-      <div class="pagination" *ngIf="totalItems > pageSize">
+      <div class="pagination" *ngIf="filteredBookings.length > pageSize">
         <button class="page-btn" (click)="prevPage()" [disabled]="!hasPrev">
           <i class="fas fa-chevron-left"></i> Prev
         </button>

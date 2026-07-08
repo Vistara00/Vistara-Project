@@ -1,3 +1,4 @@
+// src/app/pages/login/login.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -20,7 +21,9 @@ export class LoginComponent implements OnInit {
   showPassword = false;
   remember = false;
 
-private readonly API_URL = `${environment.apiUrl}/v1/auth/login`;
+  // ✅ Correct URL: environment.apiUrl is '/api', so this becomes '/api/auth/login'
+  // Proxy will rewrite '/api' to '/api/v1'
+  private readonly API_URL = `${environment.apiUrl}/v1/auth/login`;
 
   constructor(
     private fb: FormBuilder,
@@ -64,15 +67,20 @@ private readonly API_URL = `${environment.apiUrl}/v1/auth/login`;
     this.loading = true;
     const payload = this.loginForm.value;
 
+    console.log('🔍 Login URL:', this.API_URL);
+    console.log('📤 Login payload:', { email: payload.email, password: '******' });
+
     this.http.post(this.API_URL, payload).subscribe({
       next: (res: any) => {
-        // console.log('LOGIN RESPONSE:', res);
+        console.log('✅ Login response:', res);
         this.loading = false;
 
         const token = res?.data?.token;
 
         if (token) {
-          // save token with 1 hour expiry
+          // ✅ Save token with key 'token'
+          localStorage.setItem('token', token);
+          // Also save with authService
           this.authService.saveToken(token, 3600);
 
           if (this.remember) {
@@ -88,10 +96,19 @@ private readonly API_URL = `${environment.apiUrl}/v1/auth/login`;
       },
       error: (err) => {
         this.loading = false;
-        console.error('LOGIN ERROR:', err);
-        this.errorMessage =
-          err?.error?.message ||
-          'Login failed. Please check your credentials or server connection.';
+        console.error('❌ LOGIN ERROR:', err);
+        
+        if (err.status === 0) {
+          this.errorMessage = 'Cannot connect to server. Please check your internet connection.';
+        } else if (err.status === 401) {
+          this.errorMessage = 'Invalid email or password. Please try again.';
+        } else if (err.status === 403) {
+          this.errorMessage = 'Access forbidden. Please check your credentials.';
+        } else if (err.status === 404) {
+          this.errorMessage = 'Login endpoint not found. Please check the URL.';
+        } else {
+          this.errorMessage = err?.error?.message || 'Login failed. Please try again.';
+        }
       }
     });
   }

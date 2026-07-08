@@ -1,10 +1,52 @@
 <!-- src/app/pages/tracking/tracking.html -->
 
 <div class="tracking-page">
+  <!-- Header -->
+  <div class="tracking-header">
+    <div class="header-left">
+      <h1>Live Visitor Tracking</h1>
+      <div class="stats">
+        <span class="stat">
+          <strong>{{ getVisitorCount() }}</strong> Active Visitors
+        </span>
+        <span class="stat stat-danger" *ngIf="getSosCount() > 0">
+          🚨 <strong>{{ getSosCount() }}</strong> SOS Alerts
+        </span>
+        <span class="stat stat-info">
+          <i class="fas fa-clock"></i> Last updated: {{ getLastRefreshTime() }}
+        </span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="btn-refresh" (click)="refreshData()" [disabled]="isLoading">
+        <i class="fas fa-sync-alt" [ngClass]="{'fa-spin': isLoading}"></i>
+        {{ isLoading ? 'Loading...' : 'Refresh' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Error message -->
+  <div class="error-message" *ngIf="errorMessage">
+    <span class="error-icon">⚠️</span>
+    {{ errorMessage }}
+    <button (click)="errorMessage = ''">×</button>
+  </div>
+
   <!-- Search bar -->
   <div class="tracking-search">
-    <input type="text" placeholder="Search visitor by name..." [(ngModel)]="searchQuery" />
-    <button (click)="searchVisitor()">Search</button>
+    <div class="search-wrapper">
+      <input 
+        type="text" 
+        placeholder="Search visitor by name..." 
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="searchVisitor()"
+        (input)="searchVisitor()"
+      />
+      <button *ngIf="searchQuery" (click)="searchQuery = ''; searchVisitor()" class="btn-clear">×</button>
+    </div>
+    <button class="btn-search" (click)="searchVisitor()">
+      <i class="fas fa-search"></i> Search
+    </button>
   </div>
 
   <!-- Map section -->
@@ -12,32 +54,133 @@
     <div class="map-header">
       <h2>Live Visitor Map</h2>
       <small>Real-time GPS feed of all active visitors</small>
+      <div class="map-legend">
+        <span class="legend-dot active"></span> Active
+        <span class="legend-dot emergency"></span> SOS Emergency
+      </div>
     </div>
-    <div id="map" class="map-container">
-      <div class="map-placeholder">[Map loading — integrate Leaflet or Mapbox]</div>
-    </div>
+    <div id="map" class="map-container"></div>
+  </div>
+
+  <!-- Loading state -->
+  <div class="loading-state" *ngIf="isLoading && visitors.length === 0">
+    <div class="spinner"></div>
+    <p>Loading visitors...</p>
   </div>
 
   <!-- Visitor list -->
-  <div class="visitor-list">
-    <h3>Currently Active Visitors</h3>
-    <table>
+  <div class="visitor-list" *ngIf="!isLoading">
+    <div class="list-header">
+      <h3>Currently Active Visitors</h3>
+      <span class="list-count">{{ filteredVisitors.length }} visitors</span>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredVisitors.length === 0">
+      <p *ngIf="searchQuery">No visitors found matching "{{ searchQuery }}"</p>
+      <p *ngIf="!searchQuery">No active visitors at the moment</p>
+    </div>
+
+    <table *ngIf="filteredVisitors.length > 0">
       <thead>
         <tr>
-          <th>Name</th>
+          <th>Visitor</th>
           <th>Vehicle</th>
+          <th>Group</th>
           <th>Last Update</th>
           <th>Status</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let v of filteredVisitors">
-          <td>{{ v.name }}</td>
-          <td>{{ v.vehicle }}</td>
-          <td>{{ v.lastUpdate | date:'shortTime' }}</td>
-          <td>{{ v.status }}</td>
+        <tr 
+          *ngFor="let v of filteredVisitors" 
+          [class.emergency]="v.sosTriggered || v.hasEmergency"
+          (click)="loadVisitorDetails(v.sessionId)"
+        >
+          <td>
+            <div class="visitor-info">
+              <div class="avatar" [ngClass]="{'avatar-emergency': v.sosTriggered || v.hasEmergency}">
+                {{ getInitials(v.visitorName) }}
+              </div>
+              <div>
+                <div class="visitor-name">{{ v.visitorName }}</div>
+                <div class="visitor-email">{{ v.visitorEmail }}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{ v.vehicleRegistration || 'N/A' }}</td>
+          <td>{{ v.groupSize }}</td>
+          <td>{{ formatTime(v.lastLocationTime) }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(v)">
+              {{ getStatusText(v) }}
+            </span>
+          </td>
+          <td>
+            <button 
+              class="btn-view" 
+              (click)="$event.stopPropagation(); loadVisitorDetails(v.sessionId)"
+            >
+              <i class="fas fa-eye"></i> View
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Visitor Details Popup -->
+  <div class="modal-overlay" *ngIf="showVisitorPopup" (click)="closePopup()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="closePopup()">×</button>
+      
+      <div *ngIf="selectedVisitor">
+        <h2>{{ selectedVisitor.visitorName }}</h2>
+        
+        <div class="detail-grid">
+          <div class="detail-item">
+            <label>Email</label>
+            <span>{{ selectedVisitor.visitorEmail }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Phone</label>
+            <span>{{ selectedVisitor.visitorPhone }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Check-in Time</label>
+            <span>{{ selectedVisitor.checkInTime | date:'medium' }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Vehicle</label>
+            <span>{{ selectedVisitor.vehicleRegistration || 'N/A' }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Group Size</label>
+            <span>{{ selectedVisitor.groupSize }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Booking Reference</label>
+            <span>{{ selectedVisitor.bookingReference || 'N/A' }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Location History</label>
+            <span>{{ selectedVisitor.totalLocations }} points</span>
+          </div>
+          <div class="detail-item">
+            <label>Status</label>
+            <span class="status-badge" [ngClass]="selectedVisitor.sosTriggered || selectedVisitor.hasEmergency ? 'status-emergency' : 'status-active'">
+              {{ selectedVisitor.sosTriggered || selectedVisitor.hasEmergency ? '🚨 SOS EMERGENCY' : '✅ Active' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-primary" (click)="focusMapOnLocation(selectedVisitor.lastLatitude, selectedVisitor.lastLongitude)">
+            📍 Locate on Map
+          </button>
+          <button class="btn-secondary" (click)="closePopup()">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

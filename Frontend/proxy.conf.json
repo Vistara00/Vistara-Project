@@ -1,10 +1,16 @@
 {
   "/api": {
     "target": "https://undrafted-erasable-crevice.ngrok-free.dev",
-    "secure": true,
+    "secure": false,
     "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api": "/api"
+    },
     "headers": {
       "ngrok-skip-browser-warning": "true"
-    }
+    },
+    "timeout": 60000,
+    "proxyTimeout": 60000
   }
 }
