@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: vistara-backend
+    runtime: image
+    repo: https://github.com/Vistara00/Vistara-Project
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerCommand: java -jar app.jar
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      - key: PORT
+        value: 8087
+      - key: DB_URL
+        fromDatabase:
+          name: vistara-db
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: vistara-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: vistara-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: https://your-frontend.onrender.com
+
+  - type: postgresql
+    name: vistara-db
+    region: singapore
+    plan: free
