@@ -53,6 +53,11 @@ public class SecurityConfig {
                         .requestMatchers("/tourist/**").hasAuthority("TOURIST")
                         .requestMatchers("/ranger/**").hasAuthority("RANGER")
                         .requestMatchers("/admin/**").hasAuthority("ADMIN")
+
+                        // In SecurityConfig.java, add these endpoints to permitAll or role-based
+                        .requestMatchers("/bookings/payment-status/**").permitAll()
+                        .requestMatchers("/bookings/scan-qr").hasAnyRole("RANGER", "ADMIN")
+                        .requestMatchers("/bookings/qr-checkin").hasAnyRole("RANGER", "ADMIN")
                         // All other requests require authentication
                         .anyRequest().authenticated()
                 )

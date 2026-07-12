@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-
+v 
 COMMENT ON TABLE bookings IS 'Pre‑visit bookings made by tourists or manually created by admin';
 COMMENT ON COLUMN bookings.booking_reference IS 'Unique reference code for the booking (e.g., VST-20250610-001)';
 COMMENT ON COLUMN bookings.payment_status IS 'PENDING, PAID, FAILED, REFUNDED';
