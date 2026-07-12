@@ -22,6 +22,62 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
+	<!-- ===== ADD REPOSITORIES SECTION ===== -->
+	<repositories>
+		<repository>
+			<id>central</id>
+			<name>Maven Central Repository</name>
+			<url>https://repo1.maven.org/maven2</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<!-- Spring Repository for additional dependencies -->
+		<repository>
+			<id>spring-releases</id>
+			<name>Spring Releases</name>
+			<url>https://repo.spring.io/release</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+		<!-- Spring Milestones for future updates -->
+		<repository>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>https://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<!-- ===== ADD PLUGIN REPOSITORIES SECTION ===== -->
+	<pluginRepositories>
+		<pluginRepository>
+			<id>central</id>
+			<name>Maven Central Plugins</name>
+			<url>https://repo1.maven.org/maven2</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+		<pluginRepository>
+			<id>spring-releases</id>
+			<name>Spring Releases Plugins</name>
+			<url>https://repo.spring.io/release</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</pluginRepository>
+	</pluginRepositories>
+
 	<dependencies>
 		<!-- Spring Boot Starters -->
 		<dependency>
@@ -173,6 +229,26 @@
 				<configuration>
 					<source>21</source>
 					<target>21</target>
+				</configuration>
+			</plugin>
+			<!-- Maven Dependency Plugin - For downloading dependencies -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.6.0</version>
+				<executions>
+					<execution>
+						<id>go-offline</id>
+						<phase>none</phase> <!-- Disabled by default -->
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Maven Surefire Plugin - For tests -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<skipTests>true</skipTests>
 				</configuration>
 			</plugin>
 			<!-- Docker Build Plugin (optional - for local Docker builds) -->
