@@ -1,8 +1,8 @@
 -- =====================================================
--- V7: Insert initial data
+-- V11: Insert initial data
 -- =====================================================
 
--- Admin user
+-- Admin user (password: admin123)
 INSERT INTO users (email, password, full_name, phone_number, role, is_verified, created_at)
 SELECT
     'admin@vistara.com',
@@ -14,7 +14,7 @@ SELECT
     CURRENT_TIMESTAMP
     WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@vistara.com');
 
--- Park ranger
+-- Park ranger (password: ranger123)
 INSERT INTO users (email, password, full_name, phone_number, role, is_verified, created_at)
 SELECT
     'ranger@vistara.com',
@@ -26,7 +26,7 @@ SELECT
     CURRENT_TIMESTAMP
     WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'ranger@vistara.com');
 
--- Safe Zone
+-- Sample geofence zones
 INSERT INTO geofence_zones (zone_name, zone_description, zone_type, zone_boundary, alert_on_entry, alert_on_exit, is_active)
 SELECT
     'Main Visitor Center',
@@ -36,7 +36,6 @@ SELECT
     FALSE, FALSE, TRUE
     WHERE NOT EXISTS (SELECT 1 FROM geofence_zones WHERE zone_name = 'Main Visitor Center');
 
--- Wildlife Corridor
 INSERT INTO geofence_zones (zone_name, zone_description, zone_type, zone_boundary, alert_on_entry, alert_on_exit, is_active)
 SELECT
     'Wildlife Corridor North',
@@ -45,13 +44,3 @@ SELECT
     ST_SetSRID(ST_MakePolygon(ST_GeomFromText('LINESTRING(36.8200 -1.2900, 36.8250 -1.2900, 36.8250 -1.2950, 36.8200 -1.2950, 36.8200 -1.2900)')), 4326),
     TRUE, FALSE, TRUE
     WHERE NOT EXISTS (SELECT 1 FROM geofence_zones WHERE zone_name = 'Wildlife Corridor North');
-
--- Danger Zone
-INSERT INTO geofence_zones (zone_name, zone_description, zone_type, zone_boundary, alert_on_entry, alert_on_exit, requires_escort, is_active)
-SELECT
-    'Cliff Edge Danger Zone',
-    'Steep cliffs - immediate danger - entry forbidden',
-    'DANGER',
-    ST_SetSRID(ST_MakePolygon(ST_GeomFromText('LINESTRING(36.8180 -1.2930, 36.8190 -1.2930, 36.8190 -1.2940, 36.8180 -1.2940, 36.8180 -1.2930)')), 4326),
-    TRUE, FALSE, TRUE, TRUE
-    WHERE NOT EXISTS (SELECT 1 FROM geofence_zones WHERE zone_name = 'Cliff Edge Danger Zone');

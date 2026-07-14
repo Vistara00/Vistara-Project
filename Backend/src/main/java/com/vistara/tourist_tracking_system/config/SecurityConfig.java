@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
+                        // Public endpoints (no authentication required)
                         .requestMatchers(
                                 "/auth/**",
                                 "/public/**",
@@ -45,19 +45,22 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        // M-Pesa callback
+                        // M-Pesa callback (must be public)
                         .requestMatchers("/payments/mpesa/stk-callback").permitAll()
-                        // M-Pesa STK Push initiation
+                        // M-Pesa STK Push initiation (authenticated)
                         .requestMatchers("/payments/mpesa/stkpush").authenticated()
-                        // Role-based access - using hasAuthority for exact role matching
-                        .requestMatchers("/tourist/**").hasAuthority("TOURIST")
-                        .requestMatchers("/ranger/**").hasAuthority("RANGER")
-                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
-
-                        // In SecurityConfig.java, add these endpoints to permitAll or role-based
+                        // Payment status - public for QR code verification
                         .requestMatchers("/bookings/payment-status/**").permitAll()
-                        .requestMatchers("/bookings/scan-qr").hasAnyRole("RANGER", "ADMIN")
-                        .requestMatchers("/bookings/qr-checkin").hasAnyRole("RANGER", "ADMIN")
+                        // QR Code endpoints - accessible by rangers and admins
+                        .requestMatchers("/bookings/scan-qr").hasAnyRole("PARK_RANGER", "ADMIN")
+                        .requestMatchers("/bookings/qr-checkin").hasAnyRole("PARK_RANGER", "ADMIN")
+                        // In SecurityConfig.java
+                        .requestMatchers("/qr/**").authenticated()  // All authenticated users can access QR endpoints
+                        // Role-based access - using hasRole() for cleaner security
+                        .requestMatchers("/tourist/**").hasRole("TOURIST")
+                        // Allow both RANGER and PARK_RANGER for ranger endpoints
+                        .requestMatchers("/ranger/**").hasAnyRole("RANGER", "PARK_RANGER")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         // All other requests require authentication
                         .anyRequest().authenticated()
                 )
@@ -75,12 +78,15 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:4200",
+                "http://localhost:8080",
+                "http://localhost:8081",
                 "https://undrafted-erasable-crevice.ngrok-free.dev"
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

@@ -283,8 +283,25 @@ public class AdminController {
             @Valid @RequestBody AdminCheckInRequest request) {
         User admin = userService.findByEmail(adminDetails.getUsername());
 
+        // Check if booking exists and is valid
         if (request.getBookingId() != null && request.getBookingId() > 0) {
             Booking booking = bookingService.getBookingById(request.getBookingId());
+
+            // Check if booking is already checked in
+            if (booking.getCheckinStatus() != null && booking.getCheckinStatus()) {
+                return ResponseEntity.badRequest().body(
+                        ApiResponse.error("This booking has already been checked in")
+                );
+            }
+
+            // Check if booking has an active session
+            VisitorSession existingSession = sessionRepository.findByBookingIdAndActiveTrue(request.getBookingId());
+            if (existingSession != null) {
+                return ResponseEntity.badRequest().body(
+                        ApiResponse.error("This booking already has an active session. Check out first.")
+                );
+            }
+
             if (!"PAID".equals(booking.getPaymentStatus())) {
                 return ResponseEntity.badRequest().body(
                         ApiResponse.error("Booking payment is not PAID. Current status: " + booking.getPaymentStatus())
@@ -295,6 +312,11 @@ public class AdminController {
                         ApiResponse.error("Booking is not CONFIRMED. Current status: " + booking.getBookingStatus())
                 );
             }
+
+            // Mark booking as checked in
+            booking.setCheckinStatus(true);
+            bookingService.saveBooking(booking);
+            log.info("✅ Booking {} marked as checked in by admin {}", booking.getBookingReference(), admin.getEmail());
         }
 
         VisitorSession session = visitorService.checkInByAdmin(
@@ -314,6 +336,13 @@ public class AdminController {
             @Valid @RequestBody AdminCheckOutRequest request) {
         User admin = userService.findByEmail(adminDetails.getUsername());
         VisitorSession session = visitorService.checkOutByAdmin(request.getSessionId(), request.getNotes(), admin);
+
+        // Reset check-in status on booking if exists
+        if (session.getBooking() != null) {
+            bookingService.updateCheckinStatus(session.getBooking().getId(), false);
+            log.info("✅ Booking {} check-in status reset after checkout", session.getBooking().getBookingReference());
+        }
+
         return ResponseEntity.ok(ApiResponse.success(session, "Check‑out successful"));
     }
 
@@ -358,6 +387,7 @@ public class AdminController {
                     if (session.getBooking() != null) {
                         data.put("bookingReference", session.getBooking().getBookingReference());
                         data.put("bookingStatus", session.getBooking().getBookingStatus());
+                        data.put("checkinStatus", session.getBooking().getCheckinStatus());
                     }
 
                     return data;
@@ -580,7 +610,11 @@ public class AdminController {
         response.setPaymentStatus(booking.getPaymentStatus());
         response.setBookingStatus(booking.getBookingStatus());
         response.setPaymentReference(booking.getPaymentReference());
+        response.setCheckinStatus(booking.getCheckinStatus());
         response.setCreatedAt(booking.getCreatedAt());
+        response.setUpdatedAt(booking.getUpdatedAt());
+        response.setAdminNotes(booking.getAdminNotes());
+        response.setPaymentTrackingId(booking.getPaymentTrackingId());
         return response;
     }
 

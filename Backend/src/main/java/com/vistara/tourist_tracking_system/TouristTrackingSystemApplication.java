@@ -16,5 +16,4 @@ public class TouristTrackingSystemApplication {
         System.out.println("  WebSocket: ws://localhost:8087/ws");
         System.out.println("========================================");
 	}
-
 }

@@ -64,6 +64,9 @@ public class Booking {
     @Column(name = "payment_tracking_id")
     private String paymentTrackingId;  // stores CheckoutRequestID
 
+    @Column(name = "checkin_status")
+    private Boolean checkinStatus = false;  // false by default
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

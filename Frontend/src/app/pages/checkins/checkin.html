@@ -1,3 +1,4 @@
+<!-- src/app/pages/checkin/checkin.html -->
 <div class="checkins-container">
   <!-- Fixed Top Section -->
   <div class="top-section">
@@ -58,7 +59,7 @@
 
   <!-- Loading State -->
   <div *ngIf="loading" class="loading-state">
-    <i class="fas fa-spinner fa-spin"></i> Loading visitors...
+    <i class="fas fa-spinner fa-spin"></i> Loading bookings...
   </div>
 
   <!-- Scrollable Table Section -->
@@ -87,13 +88,16 @@
             <td>{{ b.checkInDate | date:'MMM d, y' }}</td>
             <td>{{ b.checkOutDate | date:'MMM d, y' }}</td>
             <td>
-              <span class="status" [ngClass]="b.bookingStatus.toLowerCase()">
-                {{ b.bookingStatus }}
+              <span class="status" [ngClass]="getStatusClass(b)">
+                {{ getStatusLabel(b) }}
               </span>
             </td>
             <td class="actions">
-              <!-- Check-in only exists on this page -->
-              <button class="icon-btn checkin-btn" title="Check‑in" (click)="onCheckin(b)">
+              <!-- Check-in button - disabled if already checked in -->
+              <button class="icon-btn checkin-btn" 
+                      title="Check‑in" 
+                      (click)="onCheckin(b)"
+                      [disabled]="b.checkinStatus">
                 <i class="fas fa-sign-in-alt"></i>
               </button>
               <button class="icon-btn view-btn" title="View" (click)="onView(b)">

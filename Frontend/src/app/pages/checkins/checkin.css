@@ -269,6 +269,42 @@
   font-size: 16px;
 }
 
+/* Add to your checkin.css */
+
+.status-ready {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.status-checked-in {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.icon-btn.checkin-btn {
+  color: #2563eb;
+}
+
+.icon-btn.checkin-btn:hover:not(:disabled) {
+  background: #dbeafe;
+  transform: scale(1.1);
+}
+
+.icon-btn.checkin-btn:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.icon-btn.view-btn {
+  color: #6b7280;
+}
+
+.icon-btn.view-btn:hover {
+  background: #f3f4f6;
+  transform: scale(1.1);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .summary-cards {

@@ -57,6 +57,14 @@ export class BookingService {
   }
 
   /**
+   * ✅ Get QR Code for a booking
+   * GET /api/v1/bookings/{bookingId}/qr
+   */
+  getBookingQR(bookingId: number): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/v1/bookings/${bookingId}/qr`);
+  }
+
+  /**
    * Create cash booking
    */
   createCashBooking(payload: any): Observable<any> {
@@ -75,7 +83,7 @@ export class BookingService {
    */
   confirmPayment(bookingId: number, paymentReference: string): Observable<any> {
     return this.http.post(
-      `${environment.apiUrl}/admin/bookings/${bookingId}/confirm-payment`, 
+      `${environment.apiUrl}/v1/admin/bookings/${bookingId}/confirm-payment`, 
       null,
       { params: { paymentReference } }
     );
@@ -109,5 +117,36 @@ export class BookingService {
     return this.http.get(`${environment.apiUrl}/v1/admin/bookings`, {
       params: { status }
     });
+  }
+
+  /**
+   * ✅ Get bookings by user ID
+   */
+  getBookingsByUser(userId: number): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/v1/admin/bookings/user/${userId}`);
+  }
+
+  /**
+   * ✅ Update booking status
+   */
+  updateBookingStatus(bookingId: number, status: string): Observable<any> {
+    return this.http.patch(
+      `${environment.apiUrl}/v1/admin/bookings/${bookingId}/status`,
+      { status }
+    );
+  }
+
+  /**
+   * ✅ Check if booking is eligible for check-in
+   */
+  checkBookingEligibility(bookingId: number): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/v1/admin/bookings/${bookingId}/check-eligibility`);
+  }
+
+  /**
+   * ✅ Get booking statistics
+   */
+  getBookingStats(): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/v1/admin/bookings/stats`);
   }
 }

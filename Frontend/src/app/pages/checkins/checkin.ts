@@ -21,6 +21,8 @@ interface Booking {
   vehicleRegistration: string;
   groupSize: number;
   notes: string;
+  checkinStatus: boolean;  // ✅ Added check-in status
+  qrCodeBase64?: string;   // Optional QR code
 }
 
 // API Response for list of bookings
@@ -75,11 +77,14 @@ export class CheckinComponent implements OnInit {
         console.log('API Response:', res); // Debug log
         
         if (res && res.data) {
-          // Check-in page: bookings that are paid and awaiting arrival
+          // ✅ Filter: Paid, Confirmed, AND NOT checked in
           this.bookings = res.data.filter(
-            (b: Booking) => b.paymentStatus === 'PAID' && b.bookingStatus === 'CONFIRMED'
+            (b: Booking) => 
+              b.paymentStatus === 'PAID' && 
+              b.bookingStatus === 'CONFIRMED' && 
+              !b.checkinStatus  // ✅ Exclude already checked-in bookings
           );
-          console.log('Bookings loaded:', this.bookings.length);
+          console.log('Bookings loaded (eligible for check-in):', this.bookings.length);
         } else {
           this.bookings = [];
           this.errorMessage = 'No bookings found';
@@ -127,7 +132,7 @@ export class CheckinComponent implements OnInit {
       next: (res) => {
         this.loading = false;
         if (res && res.data) {
-          this.selectedBooking = res.data;  // Now TypeScript knows this is a single Booking
+          this.selectedBooking = res.data;
           this.showPopup = true;
         } else {
           alert('Failed to load booking details.');
@@ -182,5 +187,34 @@ export class CheckinComponent implements OnInit {
     if (this.selectedBooking) {
       this.onCheckin(this.selectedBooking);
     }
+  }
+
+  // ✅ Check if booking is eligible for check-in
+  isEligibleForCheckin(booking: Booking): boolean {
+    return booking.paymentStatus === 'PAID' && 
+           booking.bookingStatus === 'CONFIRMED' && 
+           !booking.checkinStatus;
+  }
+
+  // ✅ Get status label for display
+  getStatusLabel(booking: Booking): string {
+    if (booking.checkinStatus) {
+      return 'Checked In';
+    }
+    if (booking.paymentStatus === 'PAID' && booking.bookingStatus === 'CONFIRMED') {
+      return 'Ready for Check-in';
+    }
+    return booking.bookingStatus || 'Unknown';
+  }
+
+  // ✅ Get status class for styling
+  getStatusClass(booking: Booking): string {
+    if (booking.checkinStatus) {
+      return 'status-checked-in';
+    }
+    if (booking.paymentStatus === 'PAID' && booking.bookingStatus === 'CONFIRMED') {
+      return 'status-ready';
+    }
+    return 'status-' + (booking.bookingStatus || '').toLowerCase();
   }
 }

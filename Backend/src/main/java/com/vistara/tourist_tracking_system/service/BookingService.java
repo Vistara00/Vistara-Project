@@ -48,6 +48,7 @@ public class BookingService {
         booking.setPaymentStatus(Booking.PaymentStatus.PENDING);
         booking.setBookingStatus(Booking.BookingStatus.PENDING);
         booking.setBookingReference(generateBookingReference());
+        booking.setCheckinStatus(false);
 
         Booking saved = bookingRepository.save(booking);
 
@@ -175,6 +176,7 @@ public class BookingService {
         booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
         booking.setBookingReference(generateBookingReference());
         booking.setAdminNotes(adminNotes);
+        booking.setCheckinStatus(false);
 
         Booking saved = bookingRepository.save(booking);
 
@@ -212,6 +214,7 @@ public class BookingService {
         booking.setBookingStatus(Booking.BookingStatus.PENDING);
         booking.setBookingReference(generateBookingReference());
         booking.setAdminNotes(request.getNotes());
+        booking.setCheckinStatus(false);
 
         Booking saved = bookingRepository.save(booking);
 
@@ -367,5 +370,36 @@ public class BookingService {
 
     public List<Booking> getBookingsByStatus(String status) {
         return bookingRepository.findByBookingStatus(status);
+    }
+
+    /**
+     * ✅ NEW: Save booking (used in check-in/checkout)
+     */
+    @Transactional
+    public Booking saveBooking(Booking booking) {
+        return bookingRepository.save(booking);
+    }
+
+    /**
+     * ✅ NEW: Update check-in status only
+     */
+    @Transactional
+    public void updateCheckinStatus(Long bookingId, boolean status) {
+        Booking booking = getBookingById(bookingId);
+        booking.setCheckinStatus(status);
+        bookingRepository.save(booking);
+        log.info("Booking {} check-in status updated to: {}", bookingId, status);
+    }
+
+    /**
+     * Find active booking for a user (confirmed and not checked in)
+     */
+    public Booking findActiveBookingByUser(User user) {
+        List<Booking> bookings = bookingRepository.findByUserId(user.getId());
+        return bookings.stream()
+                .filter(b -> Booking.BookingStatus.CONFIRMED.equals(b.getBookingStatus()))
+                .filter(b -> !Boolean.TRUE.equals(b.getCheckinStatus()))
+                .findFirst()
+                .orElse(null);
     }
 }

@@ -66,4 +66,35 @@ public class QRCodeService {
         );
         return generateQRCodeBase64(qrData, 300, 300);
     }
+
+    /**
+     * Generate QR Code for a booking
+     */
+    public String generateQRCode(Booking booking) {
+        try {
+            // Create QR code data
+            String qrData = String.format(
+                    "{\"bookingId\":%d,\"reference\":\"%s\",\"visitor\":\"%s\",\"checkIn\":\"%s\",\"checkOut\":\"%s\"}",
+                    booking.getId(),
+                    booking.getBookingReference(),
+                    booking.getUser().getFullName(),
+                    booking.getCheckInDate().toString(),
+                    booking.getCheckOutDate().toString()
+            );
+
+            // Generate QR code
+            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+            BitMatrix bitMatrix = qrCodeWriter.encode(qrData, BarcodeFormat.QR_CODE, 300, 300);
+
+            // Convert to Base64
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            MatrixToImageWriter.writeToStream(bitMatrix, "PNG", outputStream);
+
+            return Base64.getEncoder().encodeToString(outputStream.toByteArray());
+
+        } catch (WriterException | IOException e) {
+            log.error("Failed to generate QR Code for booking {}: {}", booking.getBookingReference(), e.getMessage());
+            throw new RuntimeException("Failed to generate QR Code", e);
+        }
+    }
 }

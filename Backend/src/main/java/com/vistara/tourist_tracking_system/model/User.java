@@ -115,8 +115,9 @@ public class User implements UserDetails {
     /**
      * Returns the role name as stored in the database for security
      * This maps the enum to the database value
+     * Changed to public so it can be accessed from UserService
      */
-    private String getRoleForSecurity() {
+    public String getRoleForSecurity() {
         // If role is null, default to TOURIST
         if (role == null) {
             return "TOURIST";
@@ -127,6 +128,7 @@ public class User implements UserDetails {
             case ADMIN:
                 return "ADMIN";
             case RANGER:
+            case PARK_RANGER:
                 return "PARK_RANGER";  // Database stores "PARK_RANGER"
             case TOURIST:
                 return "TOURIST";
@@ -138,6 +140,7 @@ public class User implements UserDetails {
     public enum Role {
         ADMIN,
         RANGER,      // Stored as "PARK_RANGER" in the database
+        PARK_RANGER, // Added for clarity when creating users
         TOURIST
     }
 }

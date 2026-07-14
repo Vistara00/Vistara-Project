@@ -21,8 +21,8 @@ html, body { font-family: var(--font); }
 
 
 .sidebar-gap {
-  height: 40px; /* adjust spacing as needed */
-  margin-top: auto; /* pushes it to the bottom */
+  height: 40px;
+  margin-top: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -37,8 +37,8 @@ body, .app-shell { margin: 0; font-family: Inter, system-ui, -apple-system, "Seg
 /* Layout container */
 .app-shell {
   display: flex;
-  height: 100vh; /* full viewport height */
-  overflow: hidden; /* prevent sidebar/header from scrolling */
+  height: 100vh;
+  overflow: hidden;
 }
 
 
@@ -50,11 +50,11 @@ body, .app-shell { margin: 0; font-family: Inter, system-ui, -apple-system, "Seg
   display: flex;
   flex-direction: column;
   padding: 20px 16px;
-  position: fixed; /* keep it in place */
+  position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
-  overflow-y: auto; /* allow sidebar itself to scroll if needed */
+  overflow-y: auto;
 }
 
 
@@ -73,7 +73,7 @@ body, .app-shell { margin: 0; font-family: Inter, system-ui, -apple-system, "Seg
 /* Main area scrolls independently */
 .main {
   flex: 1;
-  margin-left: 240px; /* same as sidebar width */
+  margin-left: 240px;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -137,12 +137,12 @@ body, .app-shell { margin: 0; font-family: Inter, system-ui, -apple-system, "Seg
 
 .notification i {
   font-size: 20px;
-  color: #333; /* neutral dark tone */
+  color: #333;
   transition: color 0.3s ease;
 }
 
 .notification i:hover {
-  color: #0a7a0a; /* match your green accent */
+  color: #0a7a0a;
 }
 
 /* Optional: small red badge for unread notifications */
@@ -155,7 +155,7 @@ body, .app-shell { margin: 0; font-family: Inter, system-ui, -apple-system, "Seg
   height: 8px;
   background-color: #e53935;
   border-radius: 50%;
-  display: none; /* set to block when you have unread alerts */
+  display: none;
 }
 
 .profile-area {
@@ -190,7 +190,7 @@ body, .app-shell { margin: 0; font-family: Inter, system-ui, -apple-system, "Seg
 .dashboard-content {
   flex: 1;
   overflow-y: auto;
-  padding: 80px 20px 20px; /* top padding accounts for fixed header */
+  padding: 80px 20px 20px;
   background: #f6f7f6;
 }
 
@@ -249,10 +249,8 @@ body, .app-shell { margin: 0; font-family: Inter, system-ui, -apple-system, "Seg
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
-  height: 100%; /* ensures equal height */
+  height: 100%;
 }
-/*.map-panel { background:#fff; border-radius:8px; padding:12px; border:1px solid #eee; min-height:320px; display:flex; flex-direction:column; gap:8px; }
-*/
 .map-header h3 { margin:0; }
 .map-placeholder { flex:1; border-radius:6px; background:linear-gradient(180deg,#eef2ee,#fff); display:flex; align-items:center; justify-content:center; border:1px dashed #e6e6e6; color:#888; min-height:260px; }
 .map-overlay { padding:8px; color:#666; }
@@ -276,7 +274,7 @@ body, .app-shell { margin: 0; font-family: Inter, system-ui, -apple-system, "Seg
   border-radius: 10px;
   padding: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  margin-top: 24px; /* 👈 adds clean gap above the section */
+  margin-top: 24px;
 }
 
 
@@ -292,7 +290,6 @@ body, .app-shell { margin: 0; font-family: Inter, system-ui, -apple-system, "Seg
 .nav-item { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:8px; cursor:pointer; color:#e6f6e6; font-weight:600; font-size:0.95rem; }
 .nav-item i, .nav-item svg { width:18px; height:18px; font-size:18px; color:rgba(255,255,255,0.95); flex:0 0 18px; }
 .nav-item span { display:inline-block; line-height:1; }
-/*.nav-item.active { background: rgba(255,255,255,0.06); box-shadow: inset 0 1px 0 rgba(255,255,255,0.02); } */
 .sidebar { padding:18px 14px; }
 .brand-name { font-weight:800; letter-spacing:0.2px; }
 
@@ -310,11 +307,6 @@ body, .app-shell { margin: 0; font-family: Inter, system-ui, -apple-system, "Seg
   font-weight: 700;
   cursor: pointer;
 }
-
-/*.broadcast-btn { 
-  display:flex; align-items:center; gap:8px; justify-content:center; background:#d32f2f; color:#fff; border:0; padding:8px; border-radius:8px; font-weight:700; }
-*/
-
 
 /* Responsive */
 @media (max-width: 980px) {

@@ -146,15 +146,15 @@
             <th (click)="toggleSort('checkout_date')" class="sortable">
               Check‑out <i class="fas" [ngClass]="getSortIcon('checkout_date')"></i>
             </th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngIf="filteredBookings.length === 0">
-            <td colspan="8" class="empty-state">
+            <td colspan="9" class="empty-state">
               <i class="fas fa-inbox"></i> No bookings found.
             </td>
           </tr>
-          <!-- ✅ Fixed: Use getInitials() method -->
           <tr *ngFor="let booking of filteredBookings | slice: (currentPage * pageSize) : (currentPage * pageSize + pageSize)">
             <td>
               <span class="booking-id">{{ booking.bookingReference }}</span>
@@ -185,6 +185,11 @@
             </td>
             <td>{{ formatDate(booking.checkin_date) }}</td>
             <td>{{ formatDate(booking.checkout_date) }}</td>
+            <td>
+              <button class="action-btn view-btn" (click)="openQRModal(booking)" title="View QR Code">
+                <i class="fas fa-qrcode"></i>
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -193,7 +198,6 @@
     <!-- Results + Pagination -->
     <div class="table-footer" *ngIf="!loading && filteredBookings.length > 0">
       <p class="results">
-        <!-- ✅ Fixed: Use Math.min with proper syntax -->
         Showing {{ currentPage * pageSize + 1 }}–{{ Math.min((currentPage + 1) * pageSize, filteredBookings.length) }} 
         of {{ filteredBookings.length }} results
       </p>
@@ -208,4 +212,18 @@
       </div>
     </div>
   </div>
+
+  <!-- ✅ QR Modal Component -->
+  <app-qr-modal
+    *ngIf="showQRModal"
+    [bookingId]="selectedBookingForQR?.id"
+    [bookingReference]="selectedBookingForQR?.bookingReference"
+    [visitorName]="selectedBookingForQR?.visitor_name"
+    [checkInDate]="selectedBookingForQR?.checkin_date"
+    [checkOutDate]="selectedBookingForQR?.checkout_date"
+    [paymentStatus]="selectedBookingForQR?.paymentStatus"
+    [bookingStatus]="selectedBookingForQR?.bookingStatus"
+    [isTouristMode]="false"
+    (close)="closeQRModal()">
+  </app-qr-modal>
 </div>

@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -50,13 +51,18 @@ public class UserService implements UserDetailsService {
 
         // Map user role to Spring Security authorities
         Collection<GrantedAuthority> authorities = new ArrayList<>();
-        String roleName = user.getRole().name();
+
+        // Get the role name for security (handles PARK_RANGER mapping)
+        String roleName = user.getRoleForSecurity();
+
+        // Add ROLE_ prefix for Spring Security hasRole() checks
         authorities.add(new SimpleGrantedAuthority("ROLE_" + roleName));
 
-        // Also add the role without ROLE_ prefix for convenience
+        // Add without prefix for hasAuthority() checks
         authorities.add(new SimpleGrantedAuthority(roleName));
 
-        log.info("✅ User loaded: {} with authorities: {}", email, authorities);
+        log.info("✅ User loaded: {} with role: {} and authorities: {}",
+                email, user.getRole(), authorities);
 
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
@@ -100,6 +106,8 @@ public class UserService implements UserDetailsService {
         user.setEmergencyContactPhone(request.getEmergencyContactPhone());
         user.setActive(true);
         user.setVerified(false);
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
 
         User savedUser = userRepository.save(user);
         log.info("✅ User registered successfully with ID: {}", savedUser.getId());
@@ -364,11 +372,11 @@ public class UserService implements UserDetailsService {
     // ===== Ranger Management Methods =====
 
     /**
-     * Get all rangers
+     * Get all rangers (PARK_RANGER role)
      */
     public List<User> getRangers() {
         log.debug("🔍 Fetching all rangers");
-        return userRepository.findByRole(User.Role.RANGER);
+        return userRepository.findByRole(User.Role.PARK_RANGER);
     }
 
     /**
@@ -388,11 +396,11 @@ public class UserService implements UserDetailsService {
     }
 
     /**
-     * Get all rangers as DTOs
+     * Get all rangers as DTOs (PARK_RANGER role)
      */
     public List<UserResponseDTO> getAllRangers() {
         log.debug("🔍 Fetching all rangers as DTOs");
-        List<User> rangers = userRepository.findByRole(User.Role.RANGER);
+        List<User> rangers = userRepository.findByRole(User.Role.PARK_RANGER);
         return rangers.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -400,11 +408,12 @@ public class UserService implements UserDetailsService {
 
     /**
      * Get available rangers (not assigned to any active alert)
+     * Uses PARK_RANGER role
      */
     public List<UserResponseDTO> getAvailableRangers() {
         log.debug("🔍 Fetching available rangers");
 
-        List<User> rangers = userRepository.findByRole(User.Role.RANGER);
+        List<User> rangers = userRepository.findByRole(User.Role.PARK_RANGER);
         List<User> availableRangers = rangers.stream()
                 .filter(ranger -> {
                     boolean hasActiveAlert = emergencyService.hasActiveAlertAssigned(ranger.getId());
@@ -421,12 +430,12 @@ public class UserService implements UserDetailsService {
     }
 
     /**
-     * Get rangers by status
+     * Get rangers by status (PARK_RANGER role)
      */
     public List<UserResponseDTO> getRangersByStatus(boolean active) {
         log.debug("🔍 Fetching rangers with status: {}", active);
 
-        List<User> rangers = userRepository.findByRoleAndActive(User.Role.RANGER, active);
+        List<User> rangers = userRepository.findByRoleAndActive(User.Role.PARK_RANGER, active);
         return rangers.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -445,7 +454,8 @@ public class UserService implements UserDetailsService {
                     return new RuntimeException("Ranger not found with id: " + rangerId);
                 });
 
-        if (ranger.getRole() != User.Role.RANGER) {
+        // Check if the user is a PARK_RANGER
+        if (ranger.getRole() != User.Role.PARK_RANGER && ranger.getRole() != User.Role.RANGER) {
             log.warn("❌ User {} is not a ranger", rangerId);
             throw new RuntimeException("User is not a ranger");
         }
@@ -469,18 +479,14 @@ public class UserService implements UserDetailsService {
                     return new RuntimeException("Ranger not found");
                 });
 
-        if (ranger.getRole() != User.Role.RANGER) {
+        // Check if the user is a PARK_RANGER
+        if (ranger.getRole() != User.Role.PARK_RANGER && ranger.getRole() != User.Role.RANGER) {
             log.warn("❌ User {} is not a ranger", rangerId);
             throw new RuntimeException("User is not a ranger");
         }
 
-        // Get additional stats from emergency service
-        boolean hasActiveAlert = emergencyService.hasActiveAlertAssigned(rangerId);
-
         UserResponseDTO dto = convertToDTO(ranger);
-        // You could add additional fields to UserResponseDTO for stats
-        // or return a separate stats object
-
+        // Additional stats can be added here if needed
         return dto;
     }
 
@@ -525,5 +531,35 @@ public class UserService implements UserDetailsService {
 
         log.info("✅ Password reset for user: {}", userId);
         return tempPassword;
+    }
+
+    /**
+     * Update user's last login timestamp
+     */
+    @Transactional
+    public void updateLastLogin(String email) {
+        User user = findByEmail(email);
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+        log.debug("✅ Updated last login for user: {}", email);
+    }
+
+    /**
+     * Get ranger by ID with role validation
+     */
+    public User getRangerById(Long rangerId) {
+        User user = findById(rangerId);
+        if (user.getRole() != User.Role.PARK_RANGER && user.getRole() != User.Role.RANGER) {
+            throw new RuntimeException("User with ID " + rangerId + " is not a ranger");
+        }
+        return user;
+    }
+
+    /**
+     * Check if a user has a specific role
+     */
+    public boolean hasRole(String email, User.Role role) {
+        User user = findByEmail(email);
+        return user.getRole() == role;
     }
 }

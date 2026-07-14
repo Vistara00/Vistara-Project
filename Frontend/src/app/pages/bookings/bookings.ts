@@ -6,13 +6,14 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 import { NewBooking } from '../new-booking/new-booking';
 import { BookingService } from '../../core/services/booking.service';
+import { QRModalComponent } from '../../components/qr-modal/qr-modal';
 
 @Component({
   selector: 'app-bookings',
   templateUrl: './bookings.html',
   styleUrls: ['./bookings.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatTooltipModule, MatButtonModule, NewBooking]
+  imports: [CommonModule, FormsModule, MatIconModule, MatTooltipModule, MatButtonModule, NewBooking, QRModalComponent]
 })
 export class BookingsComponent implements OnInit {
   bookings: any[] = [];
@@ -20,6 +21,10 @@ export class BookingsComponent implements OnInit {
   loading = false;
   errorMessage = '';
   showModal = false;
+
+  // QR Code modal
+  showQRModal = false;
+  selectedBookingForQR: any = null;
 
   // Search and Filters
   searchQuery = '';
@@ -54,7 +59,9 @@ export class BookingsComponent implements OnInit {
     return this.currentPage < this.totalPages - 1;
   }
 
-  constructor(private bookingService: BookingService) { }
+  constructor(
+    private bookingService: BookingService
+  ) { }
 
   ngOnInit(): void {
     this.fetchBookings();
@@ -64,7 +71,6 @@ export class BookingsComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
-    // ✅ Build params object for the API
     const params: any = {
       page: this.currentPage,
       size: this.pageSize,
@@ -77,7 +83,6 @@ export class BookingsComponent implements OnInit {
       sortDirection: this.sortDirection
     };
 
-    // Remove empty params
     Object.keys(params).forEach(key => {
       if (!params[key]) {
         delete params[key];
@@ -105,7 +110,8 @@ export class BookingsComponent implements OnInit {
             amount: b.amount,
             vehicleRegistration: b.vehicleRegistration || '—',
             groupSize: b.groupSize || 1,
-            createdAt: b.createdAt
+            createdAt: b.createdAt,
+            checkinStatus: b.checkinStatus || false
           }));
           
           this.applyFilters();
@@ -113,7 +119,7 @@ export class BookingsComponent implements OnInit {
           this.errorMessage = res?.message || 'Failed to load bookings.';
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         this.loading = false;
         this.errorMessage = err?.error?.message || 'Failed to load bookings.';
         console.error('Bookings error:', err);
@@ -124,7 +130,6 @@ export class BookingsComponent implements OnInit {
   applyFilters(): void {
     let filtered = [...this.bookings];
 
-    // Search filter
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase().trim();
       filtered = filtered.filter(b =>
@@ -135,17 +140,14 @@ export class BookingsComponent implements OnInit {
       );
     }
 
-    // Status filter
     if (this.selectedStatus) {
       filtered = filtered.filter(b => b.paymentStatus === this.selectedStatus);
     }
 
-    // Payment method filter
     if (this.selectedPaymentMethod) {
       filtered = filtered.filter(b => b.payment_method === this.selectedPaymentMethod);
     }
 
-    // Date range filter
     if (this.startDate) {
       filtered = filtered.filter(b => b.checkin_date >= this.startDate);
     }
@@ -153,7 +155,6 @@ export class BookingsComponent implements OnInit {
       filtered = filtered.filter(b => b.checkin_date <= this.endDate);
     }
 
-    // Sort
     filtered.sort((a, b) => {
       let valA = a[this.sortBy] || '';
       let valB = b[this.sortBy] || '';
@@ -226,6 +227,18 @@ export class BookingsComponent implements OnInit {
     this.fetchBookings();
   }
 
+  // ✅ Open QR Code Modal using the shared component
+  openQRModal(booking: any): void {
+    this.selectedBookingForQR = booking;
+    this.showQRModal = true;
+  }
+
+  // ✅ Close QR Modal
+  closeQRModal(): void {
+    this.showQRModal = false;
+    this.selectedBookingForQR = null;
+  }
+
   getStatusClass(status: string): string {
     const map: Record<string, string> = {
       'PAID': 'status-paid',
@@ -261,7 +274,6 @@ export class BookingsComponent implements OnInit {
     return `KES ${amount.toFixed(2)}`;
   }
 
-  // ✅ Helper to get initials
   getInitials(name: string): string {
     if (!name) return '?';
     const parts = name.split(' ');

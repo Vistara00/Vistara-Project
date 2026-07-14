@@ -1,9 +1,7 @@
 package com.vistara.tourist_tracking_system.controller;
 
 import com.vistara.tourist_tracking_system.dto.*;
-// ❌ Remove this import
-// import com.vistara.tourist_tracking_system.model.Role;
-import com.vistara.tourist_tracking_system.model.User;  // ✅ This contains User.Role
+import com.vistara.tourist_tracking_system.model.User;
 import com.vistara.tourist_tracking_system.service.JwtService;
 import com.vistara.tourist_tracking_system.service.PasswordResetService;
 import com.vistara.tourist_tracking_system.service.UserService;
@@ -33,7 +31,6 @@ public class AuthController {
     @PostMapping("/register/tourist")
     public ResponseEntity<ApiResponse<?>> registerTourist(@Valid @RequestBody RegisterRequest request) {
         try {
-            // ✅ Fix: Use User.Role.TOURIST instead of Role.TOURIST
             User user = userService.registerUser(request, User.Role.TOURIST);
             Map<String, Object> response = new HashMap<>();
             response.put("user", user);
@@ -89,12 +86,9 @@ public class AuthController {
         }
     }
 
-
-    // Admin Registration Endpoint
     @PostMapping("/register/admin")
     public ResponseEntity<ApiResponse<?>> registerAdmin(@Valid @RequestBody RegisterRequest request) {
         try {
-            // Only allow admin registration if you have a secret key or specific condition
             User user = userService.registerUser(request, User.Role.ADMIN);
             Map<String, Object> response = new HashMap<>();
             response.put("user", user);
@@ -109,7 +103,8 @@ public class AuthController {
     @PostMapping("/register/ranger")
     public ResponseEntity<ApiResponse<?>> registerRanger(@Valid @RequestBody RegisterRequest request) {
         try {
-            User user = userService.registerUser(request, User.Role.RANGER);
+            // Use PARK_RANGER role for ranger registration
+            User user = userService.registerUser(request, User.Role.PARK_RANGER);
             Map<String, Object> response = new HashMap<>();
             response.put("user", user);
             response.put("message", "Ranger registered successfully");

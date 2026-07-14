@@ -99,7 +99,7 @@ export class RangerService {
 
   registerRanger(request: RegisterRangerRequest): Observable<ApiResponse<any>> {
     return this.http.post<ApiResponse<any>>(
-      `${environment.apiUrl}/v1/admin/register/ranger`,
+      `${environment.apiUrl}/v1/auth/register/ranger`,
       request
     );
   }

@@ -2,12 +2,10 @@ package com.vistara.tourist_tracking_system.repository;
 
 import com.vistara.tourist_tracking_system.model.Booking;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -23,26 +21,44 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByBookingStatus(String status);
 
-    List<Booking> findByPaymentStatus(String paymentStatus);
-
-    List<Booking> findByCheckInDateBetween(LocalDate start, LocalDate end);
-
     List<Booking> findAllByOrderByCreatedAtDesc();
 
-    @Query("SELECT b FROM Booking b WHERE b.user.id = :userId AND b.bookingStatus = :status")
-    List<Booking> findUserBookingsByStatus(@Param("userId") Long userId, @Param("status") String status);
-
-    @Query("SELECT AVG(b.amount) FROM Booking b WHERE b.paymentStatus = 'PAID' AND b.updatedAt >= :startDate")
-    Double getAverageDailyRevenue(@Param("startDate") LocalDateTime startDate);
-
-    @Query("SELECT FUNCTION('DATE', b.updatedAt) as date, SUM(b.amount) as total FROM Booking b " +
-            "WHERE b.paymentStatus = 'PAID' AND b.updatedAt >= :startDate " +
-            "GROUP BY FUNCTION('DATE', b.updatedAt) ORDER BY date")
+    /**
+     * Get daily revenue for the last N days
+     */
+    @Query("SELECT DATE(b.createdAt) as date, SUM(b.amount) as revenue " +
+            "FROM Booking b " +
+            "WHERE b.paymentStatus = 'PAID' AND b.createdAt >= :startDate " +
+            "GROUP BY DATE(b.createdAt) " +
+            "ORDER BY DATE(b.createdAt) ASC")
     List<Object[]> getDailyRevenue(@Param("startDate") LocalDateTime startDate);
 
-    @Modifying
-    @Query("UPDATE Booking b SET b.bookingStatus = :newStatus WHERE b.id = :bookingId AND b.bookingStatus = :currentStatus")
-    int updateBookingStatus(@Param("bookingId") Long bookingId,
-                            @Param("currentStatus") String currentStatus,
-                            @Param("newStatus") String newStatus);
+    /**
+     * Get total revenue by payment method
+     */
+    @Query("SELECT b.paymentMethod, SUM(b.amount) FROM Booking b " +
+            "WHERE b.paymentStatus = 'PAID' " +
+            "GROUP BY b.paymentMethod")
+    List<Object[]> getRevenueByPaymentMethod();
+
+    /**
+     * Get booking stats by status
+     */
+    @Query("SELECT b.bookingStatus, COUNT(b) FROM Booking b GROUP BY b.bookingStatus")
+    List<Object[]> countByBookingStatus();
+
+    /**
+     * Get payment stats by status
+     */
+    @Query("SELECT b.paymentStatus, COUNT(b) FROM Booking b GROUP BY b.paymentStatus")
+    List<Object[]> countByPaymentStatus();
+
+    /**
+     * Count bookings created today
+     */
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.createdAt >= :startOfDay")
+    long countCreatedToday(@Param("startOfDay") LocalDateTime startOfDay);
+
+    @Query("SELECT b FROM Booking b WHERE b.user.id = :userId AND b.bookingStatus = 'CONFIRMED' AND (b.checkinStatus IS NULL OR b.checkinStatus = false)")
+    List<Booking> findActiveBookingsByUser(@Param("userId") Long userId);
 }

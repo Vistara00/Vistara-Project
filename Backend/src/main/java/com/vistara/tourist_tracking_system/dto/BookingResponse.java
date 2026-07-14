@@ -14,12 +14,17 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookingResponse {
+    // Basic booking info
     private Long id;
     private String bookingReference;
+
+    // User info
     private Long userId;
     private String userFullName;
     private String userEmail;
     private String userPhoneNumber;
+
+    // Booking details
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
     private Integer groupSize;
@@ -27,10 +32,20 @@ public class BookingResponse {
     private String paymentMethod;
     private BigDecimal amount;
     private String paymentReference;
+
+    // Status fields
     private String paymentStatus;
     private String bookingStatus;
-    private LocalDateTime createdAt;
+    private Boolean checkinStatus;  // ✅ Track if booking has been checked in
 
-    // ✅ Add QR code field
+    // Audit fields
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    // Admin fields
+    private String adminNotes;
+    private String paymentTrackingId;
+
+    // ✅ QR code field for check-in verification
     private String qrCodeBase64;
 }

@@ -57,7 +57,7 @@ public class DashboardService {
             averageRevenue = totalRevenue / revenueData.size();
         }
 
-        // 6. Daily attendance (last 30 days) – handle date conversion safely
+        // 6. Daily attendance (last 30 days)
         List<Object[]> dailyAtt = sessionRepository.findDailyAttendance(startOfWeek);
         List<DailyStat> attendanceDaily = dailyAtt.stream()
                 .map(row -> {
@@ -67,13 +67,19 @@ public class DashboardService {
                 })
                 .collect(Collectors.toList());
 
-        // 7. Weekly attendance (last 30 days)
+        // 7. Weekly attendance (last 30 days) - using native query
         List<Object[]> weeklyAtt = sessionRepository.findWeeklyAttendance(startOfWeek);
         List<WeeklyStat> attendanceWeekly = weeklyAtt.stream()
-                .map(row -> new WeeklyStat(((Number) row[0]).intValue(), ((Number) row[1]).longValue()))
+                .map(row -> {
+                    // EXTRACT(WEEK FROM ...) returns a double in PostgreSQL
+                    Number weekNum = (Number) row[0];
+                    int weekNumber = weekNum.intValue();
+                    long count = ((Number) row[1]).longValue();
+                    return new WeeklyStat(weekNumber, count);
+                })
                 .collect(Collectors.toList());
 
-        // 8. Daily revenue for chart (safe date conversion)
+        // 8. Daily revenue for chart
         List<DailyStat> revenueDaily = revenueData.stream()
                 .map(row -> {
                     LocalDate date = toLocalDate(row[0]);

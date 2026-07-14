@@ -9,49 +9,82 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface VisitorSessionRepository extends JpaRepository<VisitorSession, Long> {
 
-    // Active sessions (list)
+    // ===== Basic Queries =====
+
     List<VisitorSession> findByActiveTrue();
 
-    // Count of active sessions (for dashboard)
-    long countByActiveTrue();
-
-    // Find active sessions for a specific user (returns list)
     List<VisitorSession> findByUserAndActiveTrue(User user);
 
-    // Find latest active session for a user (returns single result)
-    @Query("SELECT vs FROM VisitorSession vs WHERE vs.user = :user AND vs.active = true ORDER BY vs.checkInTime DESC")
-    Optional<VisitorSession> findLatestActiveSessionByUser(@Param("user") User user);
+    @Query("SELECT vs FROM VisitorSession vs WHERE vs.booking.id = :bookingId AND vs.active = true")
+    VisitorSession findByBookingIdAndActiveTrue(@Param("bookingId") Long bookingId);
 
-    // Sessions checked-in after a given time
-    List<VisitorSession> findByCheckInTimeAfter(LocalDateTime since);
+    @Query("SELECT vs FROM VisitorSession vs WHERE vs.user.id = :userId AND vs.active = true")
+    VisitorSession findByUserIdAndActiveTrue(@Param("userId") Long userId);
 
-    // Daily attendance queries
+    @Query("SELECT CASE WHEN COUNT(vs) > 0 THEN TRUE ELSE FALSE END FROM VisitorSession vs WHERE vs.user.id = :userId AND vs.active = true")
+    boolean existsByUserIdAndActiveTrue(@Param("userId") Long userId);
+
+    @Query("SELECT CASE WHEN COUNT(vs) > 0 THEN TRUE ELSE FALSE END FROM VisitorSession vs WHERE vs.booking.id = :bookingId AND vs.active = true")
+    boolean existsByBookingIdAndActiveTrue(@Param("bookingId") Long bookingId);
+
+    // ===== Dashboard Statistics =====
+
+    @Query("SELECT COUNT(vs) FROM VisitorSession vs WHERE vs.active = true")
+    long countByActiveTrue();
+
     @Query("SELECT COUNT(vs) FROM VisitorSession vs WHERE vs.checkInTime >= :startOfDay")
     long countCheckInsToday(@Param("startOfDay") LocalDateTime startOfDay);
 
     @Query("SELECT COUNT(vs) FROM VisitorSession vs WHERE vs.checkOutTime >= :startOfDay")
     long countCheckOutsToday(@Param("startOfDay") LocalDateTime startOfDay);
 
-    @Query(value = "SELECT DATE(vs.check_in_time) as date, COUNT(vs.id) as count " +
-            "FROM visitor_sessions vs " +
-            "WHERE vs.check_in_time >= :startDate " +
-            "GROUP BY DATE(vs.check_in_time) " +
-            "ORDER BY DATE(vs.check_in_time)", nativeQuery = true)
+    /**
+     * Daily attendance - using JPQL with DATE function
+     */
+    @Query("SELECT FUNCTION('DATE', vs.checkInTime) as date, COUNT(vs) as count " +
+            "FROM VisitorSession vs " +
+            "WHERE vs.checkInTime >= :startDate " +
+            "GROUP BY FUNCTION('DATE', vs.checkInTime) " +
+            "ORDER BY FUNCTION('DATE', vs.checkInTime) ASC")
     List<Object[]> findDailyAttendance(@Param("startDate") LocalDateTime startDate);
 
-    @Query(value = "SELECT EXTRACT(WEEK FROM vs.check_in_time) as week, COUNT(vs.id) as count " +
-            "FROM visitor_sessions vs " +
-            "WHERE vs.check_in_time >= :startDate " +
-            "GROUP BY EXTRACT(WEEK FROM vs.check_in_time) " +
-            "ORDER BY EXTRACT(WEEK FROM vs.check_in_time)", nativeQuery = true)
+    /**
+     * Weekly attendance - NATIVE SQL QUERY
+     * ✅ FIXED: Using native SQL with EXTRACT(WEEK FROM ...)
+     */
+    @Query(value = "SELECT EXTRACT(WEEK FROM check_in_time) as weekNumber, COUNT(*) as count " +
+            "FROM visitor_sessions " +
+            "WHERE check_in_time >= :startDate " +
+            "GROUP BY EXTRACT(WEEK FROM check_in_time) " +
+            "ORDER BY EXTRACT(WEEK FROM check_in_time) ASC",
+            nativeQuery = true)
     List<Object[]> findWeeklyAttendance(@Param("startDate") LocalDateTime startDate);
 
-    List<VisitorSession> findByActiveTrueAndCheckOutTimeIsNull();
+    // ===== Additional Methods =====
 
-    List<VisitorSession> findByUserIdAndActiveTrue(Long userId);
+    @Query("SELECT vs FROM VisitorSession vs WHERE vs.active = true ORDER BY vs.checkInTime DESC")
+    List<VisitorSession> findActiveSessionsWithDetails();
+
+    @Query("SELECT vs FROM VisitorSession vs WHERE vs.checkInTime BETWEEN :startDate AND :endDate")
+    List<VisitorSession> findByCheckInTimeBetween(@Param("startDate") LocalDateTime startDate,
+                                                  @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT COUNT(vs) FROM VisitorSession vs WHERE vs.user.id = :userId AND vs.active = true")
+    long countActiveByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT vs FROM VisitorSession vs " +
+            "LEFT JOIN FETCH vs.booking " +
+            "LEFT JOIN FETCH vs.user " +
+            "WHERE vs.active = true")
+    List<VisitorSession> findAllActiveWithDetails();
+
+    @Query("SELECT vs FROM VisitorSession vs WHERE vs.sosTriggered = true AND vs.active = true")
+    List<VisitorSession> findActiveSosSessions();
+
+    @Query("SELECT vs FROM VisitorSession vs WHERE vs.hasEmergency = true AND vs.active = true")
+    List<VisitorSession> findActiveEmergencySessions();
 }
