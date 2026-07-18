@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.vistara.tourist_tracking_system.dto.MpesaCallbackPayload;
 import com.vistara.tourist_tracking_system.model.Booking;
 import com.vistara.tourist_tracking_system.service.BookingService;
+import com.vistara.tourist_tracking_system.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ import java.util.Map;
 public class MpesaCallbackController {
 
     private final BookingService bookingService;
+    private final NotificationService notificationService;
 
     @PostMapping("/stk-callback")
     public ResponseEntity<Map<String, String>> stkCallback(@RequestBody String callbackJson) {
@@ -96,7 +98,7 @@ public class MpesaCallbackController {
                         String itemName = item.getName();
                         Object value = item.getValue();
 
-                        log.info("Metadata Item: {} = {}", itemName, value);
+                        log.debug("Metadata Item: {} = {}", itemName, value);
 
                         if ("MpesaReceiptNumber".equals(itemName)) {
                             receiptNo = value != null ? value.toString() : null;
@@ -113,6 +115,33 @@ public class MpesaCallbackController {
                 // Update booking payment status to PAID
                 bookingService.updatePaymentStatus(checkoutRequestId, receiptNo, "PAID");
 
+                // Send success notification
+                String notificationMessage = String.format(
+                        "Payment of KES %.2f for booking %s has been confirmed successfully. Receipt: %s",
+                        amount != null ? amount : booking.getAmount(),
+                        booking.getBookingReference(),
+                        receiptNo != null ? receiptNo : "N/A"
+                );
+
+                notificationService.createNotification(
+                        booking.getUser(),
+                        "Payment Successful ✅",
+                        notificationMessage,
+                        "PAYMENT",
+                        booking.getId(),
+                        false
+                );
+
+                // Notify admin
+                notificationService.createNotificationByEmail(
+                        "admin@vistara.com",
+                        "Payment Confirmed",
+                        "Booking " + booking.getBookingReference() + " has been paid. Receipt: " + receiptNo,
+                        "PAYMENT",
+                        booking.getId(),
+                        false
+                );
+
                 log.info("✅ Payment successful for booking {}: Receipt={}, Amount={}, Phone={}",
                         booking.getBookingReference(), receiptNo, amount, phoneNumber);
 
@@ -120,6 +149,26 @@ public class MpesaCallbackController {
                 // Payment failed
                 String errorDesc = resultDesc != null ? resultDesc : "Payment failed";
                 bookingService.updatePaymentStatus(checkoutRequestId, null, "FAILED");
+
+                // Send failure notification
+                notificationService.createNotification(
+                        booking.getUser(),
+                        "Payment Failed ❌",
+                        "Your payment for booking " + booking.getBookingReference() + " has failed. Reason: " + errorDesc,
+                        "PAYMENT",
+                        booking.getId(),
+                        false
+                );
+
+                // Notify admin
+                notificationService.createNotificationByEmail(
+                        "admin@vistara.com",
+                        "Payment Failed",
+                        "Booking " + booking.getBookingReference() + " payment failed. Reason: " + errorDesc,
+                        "PAYMENT",
+                        booking.getId(),
+                        false
+                );
 
                 log.warn("❌ Payment failed for booking {}: {} (ResultCode: {})",
                         booking.getBookingReference(), errorDesc, resultCode);

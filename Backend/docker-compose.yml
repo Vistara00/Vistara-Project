@@ -1,0 +1,53 @@
+# docker-compose.yml
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: vistara_postgres
+    environment:
+      POSTGRES_DB: vistara_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 00000000
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vistara_network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: Backend/Dockerfile
+      dockerfile: Dockerfile
+    container_name: vistara_backend
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres:5432/vistara_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: 00000000
+      JWT_SECRET: VistaraSecretKey2025ForTouristTrackingSystemSuperSecure123456789
+      CORS_ORIGINS: http://localhost:4200,http://localhost:8081
+      PORT: 8081
+      MPESA_ENABLED: false
+      # Add this to override ddl-auto
+      DDL_AUTO: update
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - vistara_network
+    restart: unless-stopped
+
+networks:
+  vistara_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

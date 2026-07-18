@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/qr")
+//@RequestMapping("/qr")  // ✅ Changed from /bookings to /qr
 @RequiredArgsConstructor
 public class QRCodeController {
 
@@ -25,47 +25,55 @@ public class QRCodeController {
     private final UserService userService;
 
     /**
-     * Get QR Code for a booking - Accessible by all authenticated users
+     * Get QR Code for a booking
      * GET /qr/booking/{bookingId}
      */
-    @GetMapping("/booking/{bookingId}")
+    @GetMapping("/booking/{bookingId}")  // ✅ Full path: /qr/booking/{bookingId}
     public ResponseEntity<ApiResponse<BookingQRResponse>> getBookingQR(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long bookingId) {
 
-        User currentUser = userService.findByEmail(userDetails.getUsername());
-        Booking booking = bookingService.getBookingById(bookingId);
+        log.info("📱 QR Code request for booking: {}", bookingId);
 
-        // Role-based access control
-        boolean isAdmin = currentUser.getRole() == User.Role.ADMIN;
-        boolean isOwner = booking.getUser().getId().equals(currentUser.getId());
-        boolean isRanger = currentUser.getRole() == User.Role.PARK_RANGER || currentUser.getRole() == User.Role.RANGER;
+        try {
+            User currentUser = userService.findByEmail(userDetails.getUsername());
+            Booking booking = bookingService.getBookingById(bookingId);
 
-        // Allow access if: Admin, Owner of the booking, or Ranger
-        if (!isAdmin && !isOwner && !isRanger) {
-            return ResponseEntity.status(403).body(
-                    ApiResponse.error("You don't have permission to view this QR code")
+            // Role-based access control
+            boolean isAdmin = currentUser.getRole() == User.Role.ADMIN;
+            boolean isOwner = booking.getUser().getId().equals(currentUser.getId());
+            boolean isRanger = currentUser.getRole() == User.Role.PARK_RANGER || currentUser.getRole() == User.Role.RANGER;
+
+            if (!isAdmin && !isOwner && !isRanger) {
+                return ResponseEntity.status(403).body(
+                        ApiResponse.error("You don't have permission to view this QR code")
+                );
+            }
+
+            // Generate QR Code
+            String qrCodeBase64 = qrCodeService.generateQRCode(booking);
+
+            BookingQRResponse response = BookingQRResponse.builder()
+                    .bookingId(booking.getId())
+                    .bookingReference(booking.getBookingReference())
+                    .qrCodeBase64(qrCodeBase64)
+                    .visitorName(booking.getUser().getFullName())
+                    .checkInDate(booking.getCheckInDate())
+                    .checkOutDate(booking.getCheckOutDate())
+                    .paymentStatus(booking.getPaymentStatus())
+                    .bookingStatus(booking.getBookingStatus())
+                    .build();
+
+            log.info("✅ QR Code generated for booking: {}", booking.getBookingReference());
+
+            return ResponseEntity.ok(ApiResponse.success(response, "QR Code generated successfully"));
+
+        } catch (Exception e) {
+            log.error("❌ Failed to generate QR Code: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.error("Failed to generate QR Code: " + e.getMessage())
             );
         }
-
-        // Generate QR Code
-        String qrCodeBase64 = qrCodeService.generateQRCode(booking);
-
-        BookingQRResponse response = BookingQRResponse.builder()
-                .bookingId(booking.getId())
-                .bookingReference(booking.getBookingReference())
-                .qrCodeBase64(qrCodeBase64)
-                .visitorName(booking.getUser().getFullName())
-                .checkInDate(booking.getCheckInDate())
-                .checkOutDate(booking.getCheckOutDate())
-                .paymentStatus(booking.getPaymentStatus())
-                .bookingStatus(booking.getBookingStatus())
-                .build();
-
-        log.info("QR Code generated for booking: {} by user: {} (Role: {})",
-                booking.getBookingReference(), currentUser.getEmail(), currentUser.getRole());
-
-        return ResponseEntity.ok(ApiResponse.success(response, "QR Code generated successfully"));
     }
 
     /**
@@ -76,27 +84,35 @@ public class QRCodeController {
     public ResponseEntity<ApiResponse<BookingQRResponse>> getMyBookingQR(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        User currentUser = userService.findByEmail(userDetails.getUsername());
+        try {
+            User currentUser = userService.findByEmail(userDetails.getUsername());
 
-        // Find active booking for tourist
-        Booking activeBooking = bookingService.findActiveBookingByUser(currentUser);
-        if (activeBooking == null) {
-            return ResponseEntity.ok(ApiResponse.success(null, "No active booking found"));
+            // Find active booking for tourist
+            Booking activeBooking = bookingService.findActiveBookingByUser(currentUser);
+            if (activeBooking == null) {
+                return ResponseEntity.ok(ApiResponse.success(null, "No active booking found"));
+            }
+
+            String qrCodeBase64 = qrCodeService.generateQRCode(activeBooking);
+
+            BookingQRResponse response = BookingQRResponse.builder()
+                    .bookingId(activeBooking.getId())
+                    .bookingReference(activeBooking.getBookingReference())
+                    .qrCodeBase64(qrCodeBase64)
+                    .visitorName(activeBooking.getUser().getFullName())
+                    .checkInDate(activeBooking.getCheckInDate())
+                    .checkOutDate(activeBooking.getCheckOutDate())
+                    .paymentStatus(activeBooking.getPaymentStatus())
+                    .bookingStatus(activeBooking.getBookingStatus())
+                    .build();
+
+            return ResponseEntity.ok(ApiResponse.success(response, "QR Code retrieved successfully"));
+
+        } catch (Exception e) {
+            log.error("❌ Failed to get user's QR Code: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.error("Failed to get QR Code: " + e.getMessage())
+            );
         }
-
-        String qrCodeBase64 = qrCodeService.generateQRCode(activeBooking);
-
-        BookingQRResponse response = BookingQRResponse.builder()
-                .bookingId(activeBooking.getId())
-                .bookingReference(activeBooking.getBookingReference())
-                .qrCodeBase64(qrCodeBase64)
-                .visitorName(activeBooking.getUser().getFullName())
-                .checkInDate(activeBooking.getCheckInDate())
-                .checkOutDate(activeBooking.getCheckOutDate())
-                .paymentStatus(activeBooking.getPaymentStatus())
-                .bookingStatus(activeBooking.getBookingStatus())
-                .build();
-
-        return ResponseEntity.ok(ApiResponse.success(response, "QR Code retrieved successfully"));
     }
 }

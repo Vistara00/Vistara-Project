@@ -8,6 +8,7 @@ import com.vistara.tourist_tracking_system.service.QRCodeService;
 import com.vistara.tourist_tracking_system.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;  // ✅ Add this import
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j  // ✅ Add this annotation
 @RestController
 @RequestMapping("/bookings")
 @RequiredArgsConstructor
@@ -102,31 +104,79 @@ public class BookingController {
      */
     @PostMapping("/scan-qr")
     public ResponseEntity<ApiResponse<BookingResponse>> scanQRCode(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody Map<String, String> request) {
-        String qrData = request.get("qrData");
 
-        if (qrData == null || qrData.isEmpty()) {
+        // Log the request for debugging
+        log.info("📱 QR Scan request from user: {}", userDetails.getUsername());
+        log.info("📱 Request body: {}", request);
+
+        String qrData = request.get("qrData");
+        String qrData2 = request.get("qrData2");  // Alternative field name
+
+        // Try both possible field names
+        String qrCodeData = qrData != null ? qrData : qrData2;
+
+        if (qrCodeData == null || qrCodeData.isEmpty()) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("QR data is required"));
+                    .body(ApiResponse.error("QR data is required. Please provide 'qrData' field."));
         }
 
         // Parse QR data format: VISTARA|BOOKING|{bookingId}|{bookingReference}
-        String[] parts = qrData.split("\\|");
-        if (parts.length < 4 || !"VISTARA".equals(parts[0]) || !"BOOKING".equals(parts[1])) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Invalid QR code format"));
-        }
-
+        // or JSON format: {"bookingId":4,"reference":"VST26071311429824",...}
         try {
-            Long bookingId = Long.parseLong(parts[2]);
-            String bookingReference = parts[3];
+            Booking booking = null;
 
-            Booking booking = bookingService.getBookingById(bookingId);
+            // Try to parse as JSON first
+            if (qrCodeData.startsWith("{")) {
+                // JSON format
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                Map<String, Object> jsonData = mapper.readValue(qrCodeData, Map.class);
 
-            // Verify the booking reference matches
-            if (!booking.getBookingReference().equals(bookingReference)) {
+                Long bookingId = null;
+                if (jsonData.containsKey("bookingId")) {
+                    bookingId = ((Number) jsonData.get("bookingId")).longValue();
+                } else if (jsonData.containsKey("id")) {
+                    bookingId = ((Number) jsonData.get("id")).longValue();
+                }
+
+                if (bookingId == null) {
+                    return ResponseEntity.badRequest()
+                            .body(ApiResponse.error("Invalid QR code: booking ID not found"));
+                }
+
+                booking = bookingService.getBookingById(bookingId);
+
+                // Verify booking reference if available
+                if (jsonData.containsKey("reference")) {
+                    String reference = jsonData.get("reference").toString();
+                    if (!booking.getBookingReference().equals(reference)) {
+                        return ResponseEntity.badRequest()
+                                .body(ApiResponse.error("Invalid QR code: booking reference mismatch"));
+                    }
+                }
+            } else {
+                // Try pipe-separated format: VISTARA|BOOKING|{bookingId}|{bookingReference}
+                String[] parts = qrCodeData.split("\\|");
+                if (parts.length >= 3) {
+                    // Check if it starts with VISTARA|BOOKING
+                    int startIndex = 0;
+                    if (parts.length >= 2 && "VISTARA".equals(parts[0]) && "BOOKING".equals(parts[1])) {
+                        startIndex = 2;
+                    }
+
+                    Long bookingId = Long.parseLong(parts[startIndex]);
+                    booking = bookingService.getBookingById(bookingId);
+                } else {
+                    // Try just booking ID
+                    Long bookingId = Long.parseLong(qrCodeData);
+                    booking = bookingService.getBookingById(bookingId);
+                }
+            }
+
+            if (booking == null) {
                 return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Invalid QR code: booking reference mismatch"));
+                        .body(ApiResponse.error("Booking not found"));
             }
 
             // Check if booking is paid and confirmed
@@ -136,16 +186,21 @@ public class BookingController {
                         .body(ApiResponse.error("Booking is not confirmed or payment not completed"));
             }
 
+            // Check if booking is already checked in
+            if (booking.getCheckinStatus() != null && booking.getCheckinStatus()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("This booking has already been checked in"));
+            }
+
             BookingResponse response = convertToResponse(booking);
-
-            // Check if visitor is already checked in
-            // You can add logic here to check if there's an active session
-
             return ResponseEntity.ok(ApiResponse.success(response, "Booking details retrieved successfully"));
+
         } catch (NumberFormatException e) {
+            log.error("❌ Number format error: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Invalid QR code: invalid booking ID"));
+                    .body(ApiResponse.error("Invalid QR code format: " + e.getMessage()));
         } catch (Exception e) {
+            log.error("❌ Error processing QR scan: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Failed to process QR code: " + e.getMessage()));
         }
@@ -156,7 +211,11 @@ public class BookingController {
      */
     @PostMapping("/qr-checkin")
     public ResponseEntity<ApiResponse<Map<String, Object>>> qrCheckin(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody Map<String, String> request) {
+
+        log.info("📱 QR Check-in request from user: {}", userDetails.getUsername());
+
         String qrData = request.get("qrData");
 
         if (qrData == null || qrData.isEmpty()) {
@@ -190,8 +249,14 @@ public class BookingController {
                         .body(ApiResponse.error("Booking is not confirmed or payment not completed"));
             }
 
-            // Check if user already has an active session
-            // This would call your check-in service
+            // Check if booking is already checked in
+            if (booking.getCheckinStatus() != null && booking.getCheckinStatus()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("This booking has already been checked in"));
+            }
+
+            // TODO: Call your check-in service here
+            // visitorService.checkInByAdmin(bookingId, null, null, "QR Check-in", admin);
 
             Map<String, Object> response = new HashMap<>();
             response.put("bookingId", booking.getId());
@@ -201,8 +266,15 @@ public class BookingController {
             response.put("checkOutDate", booking.getCheckOutDate());
             response.put("message", "Check-in successful. Welcome to Vistara Park!");
 
+            log.info("✅ QR Check-in successful for booking: {}", booking.getBookingReference());
             return ResponseEntity.ok(ApiResponse.success(response, "Check-in successful"));
+
+        } catch (NumberFormatException e) {
+            log.error("❌ Number format error: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Invalid QR code format: " + e.getMessage()));
         } catch (Exception e) {
+            log.error("❌ Error processing QR check-in: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Failed to process check-in: " + e.getMessage()));
         }

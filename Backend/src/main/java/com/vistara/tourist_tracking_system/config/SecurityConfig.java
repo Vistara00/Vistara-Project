@@ -51,14 +51,14 @@ public class SecurityConfig {
                         .requestMatchers("/payments/mpesa/stkpush").authenticated()
                         // Payment status - public for QR code verification
                         .requestMatchers("/bookings/payment-status/**").permitAll()
-                        // QR Code endpoints - accessible by rangers and admins
+                        // ✅ QR Code scan endpoints - allow PARK_RANGER role
                         .requestMatchers("/bookings/scan-qr").hasAnyRole("PARK_RANGER", "ADMIN")
                         .requestMatchers("/bookings/qr-checkin").hasAnyRole("PARK_RANGER", "ADMIN")
-                        // In SecurityConfig.java
-                        .requestMatchers("/qr/**").authenticated()  // All authenticated users can access QR endpoints
-                        // Role-based access - using hasRole() for cleaner security
+                        // ✅ QR Code endpoints - accessible by all authenticated users
+                        .requestMatchers("/bookings/*/qr").authenticated()
+                        .requestMatchers("/qr/**").authenticated()
+                        // Role-based access
                         .requestMatchers("/tourist/**").hasRole("TOURIST")
-                        // Allow both RANGER and PARK_RANGER for ranger endpoints
                         .requestMatchers("/ranger/**").hasAnyRole("RANGER", "PARK_RANGER")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         // All other requests require authentication

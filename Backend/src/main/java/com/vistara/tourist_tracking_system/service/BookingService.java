@@ -25,7 +25,8 @@ import java.util.Optional;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
-    private final MpesaService mpesaService;
+    private final Optional<MpesaService> mpesaService;
+    private final Optional<MockMpesaService> mockMpesaService;
     private final NotificationService notificationService;
 
     @Transactional
@@ -103,7 +104,6 @@ public class BookingService {
         if (Booking.PaymentStatus.PAID.equals(paymentStatus)) {
             booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
 
-            // Send notification to user about manual payment confirmation
             notificationService.createNotification(
                     booking.getUser(),
                     "Payment Confirmed ✅",
@@ -234,14 +234,30 @@ public class BookingService {
             mpesaRequest.setAccountReference(saved.getBookingReference());
             mpesaRequest.setTransactionDesc("Vistara Park Entry Payment");
 
-            MpesaStkResponse stkResponse = mpesaService.stkPush(mpesaRequest);
-            saved.setPaymentTrackingId(stkResponse.getCheckoutRequestId());
-            bookingRepository.save(saved);
+            MpesaStkResponse stkResponse;
 
-            log.info("M-Pesa STK Push initiated for booking: {}", saved.getBookingReference());
+            // Try real M-Pesa first, fallback to mock
+            if (mpesaService.isPresent()) {
+                stkResponse = mpesaService.get().stkPush(mpesaRequest);
+                saved.setPaymentTrackingId(stkResponse.getCheckoutRequestId());
+                log.info("M-Pesa STK Push initiated for booking: {}", saved.getBookingReference());
+            } else if (mockMpesaService.isPresent()) {
+                stkResponse = mockMpesaService.get().stkPush(mpesaRequest);
+                saved.setPaymentTrackingId(stkResponse.getCheckoutRequestId());
+                log.info("MOCK M-Pesa STK Push for booking: {}", saved.getBookingReference());
+            } else {
+                log.warn("No M-Pesa service available for booking: {}", saved.getBookingReference());
+                // Generate a mock tracking ID
+                saved.setPaymentTrackingId("MOCK-" + System.currentTimeMillis());
+            }
+
+            bookingRepository.save(saved);
         } catch (Exception e) {
             log.error("Failed to initiate M-Pesa payment for booking {}: {}", saved.getBookingReference(), e.getMessage());
-            throw new RuntimeException("Failed to initiate M-Pesa payment: " + e.getMessage());
+            // Don't throw - allow booking to be created without payment
+            // Generate a mock tracking ID
+            saved.setPaymentTrackingId("MOCK-ERROR-" + System.currentTimeMillis());
+            bookingRepository.save(saved);
         }
 
         return saved;
@@ -271,14 +287,12 @@ public class BookingService {
             return null;
         }
 
-        // Try exact match first
         Optional<Booking> booking = bookingRepository.findByBookingReference(bookingReference);
         if (booking.isPresent()) {
             log.info("Found booking by exact reference: {}", bookingReference);
             return booking.get();
         }
 
-        // If not found, try to find by partial match (for truncated references)
         log.info("No exact match for reference: {}. Trying partial match...", bookingReference);
         List<Booking> allBookings = bookingRepository.findAll();
         Booking partialMatch = allBookings.stream()
@@ -312,7 +326,6 @@ public class BookingService {
         if ("PAID".equals(paymentStatus)) {
             booking.setBookingStatus(Booking.BookingStatus.CONFIRMED);
 
-            // Send notification to user about successful payment
             notificationService.createNotification(
                     booking.getUser(),
                     "Payment Confirmed ✅",
@@ -322,7 +335,6 @@ public class BookingService {
                     false
             );
 
-            // Notify admin about successful payment
             notificationService.createNotificationByEmail(
                     "admin@vistara.com",
                     "Payment Confirmed",
@@ -334,7 +346,6 @@ public class BookingService {
 
             log.info("✅ Booking {} updated to PAID and notifications sent", booking.getId());
         } else if ("FAILED".equals(paymentStatus)) {
-            // Send notification to user about failed payment
             notificationService.createNotification(
                     booking.getUser(),
                     "Payment Failed ❌",

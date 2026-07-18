@@ -939,3 +939,173 @@
     justify-content: center;
   }
 }
+
+/* Compact Modal Styles */
+.compact-header {
+  padding-bottom: 8px !important;
+  margin-bottom: 12px !important;
+}
+
+.compact-header h3 {
+  font-size: 15px !important;
+}
+
+.compact-header .booking-ref {
+  font-size: 12px !important;
+  padding: 2px 10px !important;
+}
+
+.compact-body {
+  padding: 0 !important;
+  margin-bottom: 12px !important;
+}
+
+.compact-grid {
+  gap: 12px !important;
+  padding: 0 !important;
+}
+
+.compact-detail-left {
+  gap: 8px !important;
+}
+
+.compact-section {
+  padding: 8px 12px !important;
+  margin: 0 !important;
+  background: #f8fafc !important;
+  border-radius: 6px !important;
+}
+
+.compact-section .compact-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 12px !important;
+}
+
+.compact-section .compact-row i {
+  width: 14px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.compact-section .compact-label {
+  font-size: 11px !important;
+  color: #6b7280;
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.compact-section .compact-value {
+  font-size: 12px !important;
+  color: #111827;
+  font-weight: 500;
+}
+
+.compact-section .compact-value.amount {
+  color: #059669;
+  font-weight: 700;
+}
+
+.small-badge {
+  font-size: 10px !important;
+  padding: 1px 8px !important;
+}
+
+.compact-qr-section {
+  padding: 12px !important;
+  min-height: 180px !important;
+  background: #f8fafc !important;
+  border-radius: 6px !important;
+}
+
+.compact-qr {
+  padding: 0 !important;
+}
+
+.compact-qr-container {
+  gap: 8px !important;
+}
+
+.compact-qr-image {
+  max-width: 130px !important;
+  padding: 8px !important;
+}
+
+.compact-btn {
+  font-size: 12px !important;
+  padding: 4px 12px !important;
+}
+
+.compact-placeholder i {
+  font-size: 32px !important;
+}
+
+.compact-placeholder p {
+  font-size: 12px !important;
+}
+
+.compact-footer {
+  padding-top: 10px !important;
+  gap: 6px !important;
+}
+
+/* Modal Content Override */
+.modal-content.modal-lg {
+  max-width: 650px !important;
+  padding: 16px !important;
+}
+
+/* Responsive for compact modal */
+@media (max-width: 768px) {
+  .modal-content.modal-lg {
+    max-width: 95% !important;
+    padding: 12px !important;
+  }
+  
+  .compact-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .compact-qr-section {
+    min-height: 140px !important;
+  }
+  
+  .compact-qr-image {
+    max-width: 110px !important;
+  }
+  
+  .compact-section .compact-row {
+    font-size: 11px !important;
+    flex-wrap: wrap;
+  }
+  
+  .compact-section .compact-label {
+    min-width: 50px !important;
+    font-size: 10px !important;
+  }
+}
+
+/* QR Button in table */
+.action-btn.view-btn {
+  color: #2563eb;
+  font-size: 15px;
+  padding: 4px 8px;
+}
+
+.action-btn.view-btn:hover {
+  background: #dbeafe;
+  transform: scale(1.05);
+}
+
+/* Status Checked In */
+.status-checked-in {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.status-checked-in i {
+  margin-right: 3px;
+  font-size: 10px;
+}

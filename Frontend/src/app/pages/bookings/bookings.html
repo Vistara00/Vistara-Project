@@ -186,7 +186,7 @@
             <td>{{ formatDate(booking.checkin_date) }}</td>
             <td>{{ formatDate(booking.checkout_date) }}</td>
             <td>
-              <button class="action-btn view-btn" (click)="openQRModal(booking)" title="View QR Code">
+              <button class="action-btn view-btn" (click)="openQRModal(booking)" title="View Details & QR Code">
                 <i class="fas fa-qrcode"></i>
               </button>
             </td>
@@ -213,17 +213,124 @@
     </div>
   </div>
 
-  <!-- ✅ QR Modal Component -->
-  <app-qr-modal
-    *ngIf="showQRModal"
-    [bookingId]="selectedBookingForQR?.id"
-    [bookingReference]="selectedBookingForQR?.bookingReference"
-    [visitorName]="selectedBookingForQR?.visitor_name"
-    [checkInDate]="selectedBookingForQR?.checkin_date"
-    [checkOutDate]="selectedBookingForQR?.checkout_date"
-    [paymentStatus]="selectedBookingForQR?.paymentStatus"
-    [bookingStatus]="selectedBookingForQR?.bookingStatus"
-    [isTouristMode]="false"
-    (close)="closeQRModal()">
-  </app-qr-modal>
+  <!-- Compact Booking Details + QR Modal -->
+  <div class="modal-overlay" *ngIf="showQRModal" (click)="closeQRModal()">
+    <div class="modal-content modal-lg" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="closeQRModal()">&times;</button>
+      
+      <div class="modal-header compact-header">
+        <h3>
+          <i class="fas fa-ticket-alt"></i> Booking Details
+        </h3>
+        <span class="booking-ref">{{ selectedBookingForQR?.bookingReference }}</span>
+      </div>
+
+      <div class="modal-body compact-body">
+        <div *ngIf="qrLoading" class="qr-loading">
+          <i class="fas fa-spinner fa-spin"></i> Loading...
+        </div>
+
+        <div *ngIf="!qrLoading && selectedBookingForQR" class="booking-detail-grid compact-grid">
+          <!-- Left Column - Booking Details -->
+          <div class="detail-left compact-detail-left">
+            <!-- Visitor Info -->
+            <div class="detail-section compact-section">
+              <div class="compact-row">
+                <i class="fas fa-user"></i>
+                <span class="compact-label">Name:</span>
+                <span class="compact-value">{{ selectedBookingForQR?.visitor_name }}</span>
+              </div>
+              <div class="compact-row">
+                <i class="fas fa-envelope"></i>
+                <span class="compact-label">Email:</span>
+                <span class="compact-value">{{ selectedBookingForQR?.userEmail }}</span>
+              </div>
+              <div class="compact-row">
+                <i class="fas fa-phone"></i>
+                <span class="compact-label">Phone:</span>
+                <span class="compact-value">{{ selectedBookingForQR?.userPhone }}</span>
+              </div>
+            </div>
+
+            <!-- Stay Details -->
+            <div class="detail-section compact-section">
+              <div class="compact-row">
+                <i class="fas fa-calendar-check"></i>
+                <span class="compact-label">Check-in:</span>
+                <span class="compact-value">{{ formatDate(selectedBookingForQR?.checkin_date) }}</span>
+              </div>
+              <div class="compact-row">
+                <i class="fas fa-calendar-times"></i>
+                <span class="compact-label">Check-out:</span>
+                <span class="compact-value">{{ formatDate(selectedBookingForQR?.checkout_date) }}</span>
+              </div>
+              <div class="compact-row">
+                <i class="fas fa-users"></i>
+                <span class="compact-label">Group:</span>
+                <span class="compact-value">{{ selectedBookingForQR?.groupSize || 1 }}</span>
+              </div>
+              <div class="compact-row">
+                <i class="fas fa-car"></i>
+                <span class="compact-label">Vehicle:</span>
+                <span class="compact-value">{{ selectedBookingForQR?.vehicleRegistration || '—' }}</span>
+              </div>
+            </div>
+
+            <!-- Payment Details -->
+            <div class="detail-section compact-section">
+              <div class="compact-row">
+                <i class="fas fa-credit-card"></i>
+                <span class="compact-label">Method:</span>
+                <span class="compact-value">{{ selectedBookingForQR?.payment_method }}</span>
+              </div>
+              <div class="compact-row">
+                <i class="fas fa-money-bill-wave"></i>
+                <span class="compact-label">Amount:</span>
+                <span class="compact-value amount">{{ formatCurrency(selectedBookingForQR?.amount) }}</span>
+              </div>
+              <div class="compact-row">
+                <i class="fas fa-info-circle"></i>
+                <span class="compact-label">Status:</span>
+                <span class="status-badge small-badge" [ngClass]="getStatusClass(selectedBookingForQR?.paymentStatus)">
+                  {{ getStatusLabel(selectedBookingForQR?.paymentStatus) }}
+                </span>
+              </div>
+              <div class="compact-row" *ngIf="selectedBookingForQR?.checkinStatus">
+                <i class="fas fa-check-circle"></i>
+                <span class="compact-label">Check-in:</span>
+                <span class="status-badge small-badge status-checked-in">
+                  <i class="fas fa-check"></i> Checked In
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column - QR Code -->
+          <div class="detail-right compact-qr-section">
+            <div class="qr-section compact-qr">
+              <div *ngIf="qrImageUrl" class="qr-container compact-qr-container">
+                <img [src]="qrImageUrl" alt="QR Code" class="qr-image compact-qr-image"/>
+                <button class="btn-download compact-btn" (click)="downloadQR()">
+                  <i class="fas fa-download"></i> Download
+                </button>
+              </div>
+              <div *ngIf="!qrImageUrl && !qrLoading" class="qr-placeholder compact-placeholder">
+                <i class="fas fa-qrcode"></i>
+                <p>QR Code</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer compact-footer">
+        <button class="btn-secondary compact-btn" (click)="closeQRModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+        <button class="btn-primary compact-btn" *ngIf="qrImageUrl" (click)="printBooking()">
+          <i class="fas fa-print"></i> Print
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

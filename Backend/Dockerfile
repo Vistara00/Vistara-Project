@@ -1,22 +1,31 @@
+# Backend/Dockerfile
 # Build stage
 FROM maven:3.9.8-eclipse-temurin-21 AS build
 WORKDIR /app
 
-# Copy everything
-COPY . .
+# Copy pom.xml first to cache dependencies
+COPY pom.xml .
+RUN mvn dependency:resolve -B
 
-# Build the application - uses the repositories from pom.xml
+# Copy source code and build
+COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Runtime stage
-FROM eclipse-temurin:21
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-# Copy the built JAR
-COPY --from=build /app/target/*.jar app.jar
+# Create a non-root user for security
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 --gid 1001 appuser
 
-# Expose port
-EXPOSE 8080
+# Copy JAR and set ownership
+COPY --from=build --chown=appuser:appgroup /app/target/*.jar app.jar
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Use non-root user
+USER appuser
+
+EXPOSE 8081
+
+# Use PORT environment variable or default to 8081
+ENTRYPOINT ["sh", "-c", "java -jar -Dserver.port=${PORT:-8081} app.jar"]
