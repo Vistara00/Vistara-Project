@@ -32,7 +32,7 @@ public class PaymentController {
     private final Optional<MpesaService> mpesaService;
     private final Optional<MockMpesaService> mockMpesaService;
 
-    @Value("${mpesa.enabled:true")
+    @Value("${mpesa.enabled:true}") 
     private boolean mpesaEnabled;
 
     @PostMapping("/mpesa/stkpush")
