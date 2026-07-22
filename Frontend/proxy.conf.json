@@ -1,6 +1,6 @@
 {
   "/api": {
-    "target": "https://undrafted-erasable-crevice.ngrok-free.dev",
+    "target": "https://vistara-backend-ellz.onrender.com",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug",
